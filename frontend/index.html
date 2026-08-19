@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>City Hospital | Book an appointment</title>
+  <style>
+    :root {
+      --ink: #18252b;
+      --muted: #68777b;
+      --paper: #f7f4ee;
+      --panel: #fffdf9;
+      --teal: #116b68;
+      --teal-dark: #0b4f4d;
+      --coral: #dd725f;
+      --line: #d9e1dc;
+      --shadow: 0 20px 50px rgba(24, 37, 43, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.5 Georgia, "Times New Roman", serif;
+    }
+    .shell { min-height: 100vh; padding: 48px 20px; background: radial-gradient(circle at 10% 0%, #dcebe1 0, transparent 34%), var(--paper); }
+    .layout { max-width: 1040px; margin: auto; display: grid; grid-template-columns: 1fr 1.15fr; gap: 28px; align-items: center; }
+    .intro { padding: 24px; }
+    .eyebrow { color: var(--coral); font: 700 13px/1.2 Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { max-width: 520px; margin: 14px 0; font-size: clamp(42px, 6vw, 72px); line-height: .98; font-weight: 500; }
+    .intro p { max-width: 420px; color: var(--muted); font-size: 19px; }
+    .panel { padding: 34px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+    h2 { margin: 0 0 24px; font-size: 30px; font-weight: 500; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: grid; gap: 7px; color: var(--muted); font: 700 12px/1.2 Arial, sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+    label.full { grid-column: 1 / -1; }
+    input, select, textarea { width: 100%; padding: 12px 13px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 3px; font: 16px Georgia, serif; }
+    textarea { min-height: 88px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #9acbc2; border-color: var(--teal); }
+    button { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 3px; color: #fff; background: var(--teal); cursor: pointer; font: 700 14px Arial, sans-serif; letter-spacing: .4px; }
+    button:hover { background: var(--teal-dark); }
+    button:disabled { cursor: wait; opacity: .65; }
+    #message { min-height: 24px; margin: 16px 0 0; font: 14px/1.4 Arial, sans-serif; }
+    .success { color: var(--teal-dark); }
+    .error { color: #b43e32; }
+    .hint { margin: 6px 0 0; color: var(--muted); font: 12px Arial, sans-serif; }
+    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .shell { padding: 24px 14px; } .panel { padding: 24px 18px; } }
+    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } label.full { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="layout">
+      <section class="intro">
+        <div class="eyebrow">City Hospital</div>
+        <h1>Care that fits your day.</h1>
+        <p>Choose a specialist and a convenient time. Your request will be sent directly to the appointment API.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Book an appointment</h2>
+        <form id="appointment-form">
+          <div class="grid">
+            <label>Patient name
+              <input name="patientName" required placeholder="Your full name">
+            </label>
+            <label>Phone number
+              <input name="patientPhone" required inputmode="tel" placeholder="9876543210">
+            </label>
+            <label class="full">Doctor
+              <select id="doctor" name="doctorId" required>
+                <option value="">Loading doctors...</option>
+              </select>
+              <span id="doctor-hint" class="hint"></span>
+            </label>
+            <label>Date
+              <input id="date" name="date" type="date" required>
+            </label>
+            <label>Available time
+              <select id="slot" name="slot" required disabled>
+                <option value="">Choose a doctor first</option>
+              </select>
+            </label>
+            <label class="full">Reason for visit
+              <textarea name="reason" placeholder="Tell us briefly how we can help"></textarea>
+            </label>
+          </div>
+          <button id="submit" type="submit">Send booking request</button>
+          <p id="message" role="status"></p>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const doctorSelect = document.querySelector("#doctor");
+    const slotSelect = document.querySelector("#slot");
+    const doctorHint = document.querySelector("#doctor-hint");
+    const dateInput = document.querySelector("#date");
+    const form = document.querySelector("#appointment-form");
+    const submitButton = document.querySelector("#submit");
+    const message = document.querySelector("#message");
+    let doctors = [];
+
+    dateInput.min = new Date().toISOString().slice(0, 10);
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = type || "";
+    }
+
+    function selectedDoctor() {
+      return doctors.find((doctor) => doctor.id === doctorSelect.value);
+    }
+
+    function updateSlots() {
+      const doctor = selectedDoctor();
+      slotSelect.innerHTML = "";
+      if (!doctor) {
+        slotSelect.disabled = true;
+        slotSelect.add(new Option("Choose a doctor first", ""));
+        doctorHint.textContent = "";
+        return;
+      }
+      slotSelect.disabled = false;
+      slotSelect.add(new Option("Select a time", ""));
+      doctor.availableSlots.forEach((slot) => slotSelect.add(new Option(slot, slot)));
+      doctorHint.textContent = `${doctor.specialization} · ${doctor.hospitalBranch} · Rs. ${doctor.consultationFee}`;
+    }
+
+    async function loadDoctors() {
+      try {
+        const response = await fetch("/doctors");
+        if (!response.ok) throw new Error("Could not load doctors");
+        doctors = (await response.json()).data;
+        doctorSelect.innerHTML = "";
+        doctorSelect.add(new Option("Select a doctor", ""));
+        doctors.forEach((doctor) => doctorSelect.add(new Option(`${doctor.name} - ${doctor.specialization}`, doctor.id)));
+      } catch (error) {
+        doctorSelect.innerHTML = "";
+        doctorSelect.add(new Option("Doctors unavailable", ""));
+        showMessage(error.message, "error");
+      }
+    }
+
+    doctorSelect.addEventListener("change", updateSlots);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      showMessage("Sending booking request...", "");
+      submitButton.disabled = true;
+      const payload = Object.fromEntries(new FormData(form));
+      try {
+        const response = await fetch("/appointments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          const detail = typeof result.detail === "string" ? result.detail : result.detail?.message || "Booking failed";
+          throw new Error(detail);
+        }
+        showMessage(`Request ${result.data.id} created successfully. Status: ${result.data.status}.`, "success");
+        form.reset();
+        updateSlots();
+      } catch (error) {
+        showMessage(error.message, "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    loadDoctors();
+  </script>
+</body>
+</html>
