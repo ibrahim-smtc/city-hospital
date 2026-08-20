@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from models import AppointmentCreateRequest
+from models import AppointmentCreateRequest, AppointmentListResponse, AppointmentResponse
 from store import get_appointments, get_doctors, save_appointments
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -20,9 +20,21 @@ def _generate_appointment_id(appointments: list) -> str:
     return f"appt-{max_num + 1}"
 
 
-@router.post("", status_code=201)
+@router.post(
+    "",
+    status_code=201,
+    response_model=AppointmentResponse,
+    summary="Book an appointment",
+    description=(
+        "Create a pending appointment. The doctor must exist, the slot must be in the doctor's "
+        "availableSlots, and the same doctor/date/slot cannot already be booked."
+    ),
+    responses={
+        404: {"description": "Doctor ID was not found."},
+        409: {"description": "The slot is unavailable or already booked."},
+    },
+)
 def book_appointment(payload: AppointmentCreateRequest):
-    """Book an appointment with a doctor for a given date and slot."""
     doctors = get_doctors()
     doctor = next((d for d in doctors if d["id"] == payload.doctorId), None)
     if not doctor:
@@ -72,9 +84,14 @@ def book_appointment(payload: AppointmentCreateRequest):
     return {"success": True, "message": "Appointment booked successfully", "data": new_appointment}
 
 
-@router.get("/{appointment_id}")
+@router.get(
+    "/{appointment_id}",
+    response_model=AppointmentResponse,
+    summary="Check an appointment",
+    description="Return a booked appointment and its current status by appointment ID.",
+    responses={404: {"description": "Appointment ID was not found."}},
+)
 def check_appointment(appointment_id: str):
-    """Check the status of a booked appointment by its id."""
     appointments = get_appointments()
     appointment = next((a for a in appointments if a["id"] == appointment_id), None)
 
@@ -84,9 +101,16 @@ def check_appointment(appointment_id: str):
     return {"success": True, "data": appointment}
 
 
-@router.get("")
-def list_appointments(patientPhone: Optional[str] = None, status: Optional[str] = None):
-    """List all appointments, optionally filtered by patient phone or status."""
+@router.get(
+    "",
+    response_model=AppointmentListResponse,
+    summary="List appointments",
+    description="Return appointments, optionally filtered by patient phone and status.",
+)
+def list_appointments(
+    patientPhone: Optional[str] = Query(None, description="Filter by patient's phone number", examples=["9876543211"]),
+    status: Optional[str] = Query(None, description="Filter by status: pending, confirmed, completed, or cancelled", examples=["pending"]),
+):
     appointments = get_appointments()
 
     if patientPhone:

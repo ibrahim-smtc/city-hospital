@@ -232,5 +232,18 @@
     "status": "pending",
     "reason": "Back pain",
     "createdAt": "2026-08-19T10:02:14.978559+00:00"
+  },
+  {
+    "id": "appt-1019",
+    "patientName": "Hima",
+    "patientPhone": "1243567891",
+    "doctorId": "doc-002",
+    "doctorName": "Dr. Rohan Mehta",
+    "specialization": "Orthopedics",
+    "date": "12-08-25",
+    "slot": "15:00",
+    "status": "pending",
+    "reason": "Stomach pain",
+    "createdAt": "2026-08-20T04:57:45.115037+00:00"
   }
 ]

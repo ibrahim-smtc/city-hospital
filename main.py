@@ -5,8 +5,16 @@ from routers import appointments, doctors
 
 app = FastAPI(
     title="Hospital Demo API",
-    description="Fetch doctors, book an appointment, and check appointment status.",
+    description=(
+        "A demo hospital API for discovering doctors, booking appointments, "
+        "listing appointments, and checking appointment status.\n\n"
+        "## Getting started\n"
+        "1. Call `GET /doctors` to find a doctor and available slots.\n"
+        "2. Send the doctor's ID, date, and slot to `POST /appointments`.\n"
+        "3. Use the returned appointment ID with `GET /appointments/{appointment_id}`."
+    ),
     version="1.0.0",
+    contact={"name": "Hospital API Team"},
 )
 
 app.include_router(doctors.router)
