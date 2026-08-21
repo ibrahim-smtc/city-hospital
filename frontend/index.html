@@ -1,178 +1,234 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City Hospital | Book an appointment</title>
-  <style>
-    :root {
-      --ink: #18252b;
-      --muted: #68777b;
-      --paper: #f7f4ee;
-      --panel: #fffdf9;
-      --teal: #116b68;
-      --teal-dark: #0b4f4d;
-      --coral: #dd725f;
-      --line: #d9e1dc;
-      --shadow: 0 20px 50px rgba(24, 37, 43, .12);
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: var(--paper);
-      font: 16px/1.5 Georgia, "Times New Roman", serif;
-    }
-    .shell { min-height: 100vh; padding: 48px 20px; background: radial-gradient(circle at 10% 0%, #dcebe1 0, transparent 34%), var(--paper); }
-    .layout { max-width: 1040px; margin: auto; display: grid; grid-template-columns: 1fr 1.15fr; gap: 28px; align-items: center; }
-    .intro { padding: 24px; }
-    .eyebrow { color: var(--coral); font: 700 13px/1.2 Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase; }
-    h1 { max-width: 520px; margin: 14px 0; font-size: clamp(42px, 6vw, 72px); line-height: .98; font-weight: 500; }
-    .intro p { max-width: 420px; color: var(--muted); font-size: 19px; }
-    .panel { padding: 34px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
-    h2 { margin: 0 0 24px; font-size: 30px; font-weight: 500; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    label { display: grid; gap: 7px; color: var(--muted); font: 700 12px/1.2 Arial, sans-serif; letter-spacing: .4px; text-transform: uppercase; }
-    label.full { grid-column: 1 / -1; }
-    input, select, textarea { width: 100%; padding: 12px 13px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 3px; font: 16px Georgia, serif; }
-    textarea { min-height: 88px; resize: vertical; }
-    input:focus, select:focus, textarea:focus { outline: 2px solid #9acbc2; border-color: var(--teal); }
-    button { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 3px; color: #fff; background: var(--teal); cursor: pointer; font: 700 14px Arial, sans-serif; letter-spacing: .4px; }
-    button:hover { background: var(--teal-dark); }
-    button:disabled { cursor: wait; opacity: .65; }
-    #message { min-height: 24px; margin: 16px 0 0; font: 14px/1.4 Arial, sans-serif; }
-    .success { color: var(--teal-dark); }
-    .error { color: #b43e32; }
-    .hint { margin: 6px 0 0; color: var(--muted); font: 12px Arial, sans-serif; }
-    @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .shell { padding: 24px 14px; } .panel { padding: 24px 18px; } }
-    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } label.full { grid-column: auto; } }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>City Hospital | Care That Fits Your Day</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
-  <main class="shell">
-    <div class="layout">
-      <section class="intro">
-        <div class="eyebrow">City Hospital</div>
-        <h1>Care that fits your day.</h1>
-        <p>Choose a specialist and a convenient time. Your request will be sent directly to the appointment API.</p>
-      </section>
 
-      <section class="panel">
-        <h2>Book an appointment</h2>
-        <form id="appointment-form">
-          <div class="grid">
-            <label>Patient name
-              <input name="patientName" required placeholder="Your full name">
-            </label>
-            <label>Phone number
-              <input name="patientPhone" required inputmode="tel" placeholder="9876543210">
-            </label>
-            <label class="full">Doctor
-              <select id="doctor" name="doctorId" required>
-                <option value="">Loading doctors...</option>
-              </select>
-              <span id="doctor-hint" class="hint"></span>
-            </label>
-            <label>Date
-              <input id="date" name="date" type="date" required>
-            </label>
-            <label>Available time
-              <select id="slot" name="slot" required disabled>
-                <option value="">Choose a doctor first</option>
-              </select>
-            </label>
-            <label class="full">Reason for visit
-              <textarea name="reason" placeholder="Tell us briefly how we can help"></textarea>
-            </label>
-          </div>
-          <button id="submit" type="submit">Send booking request</button>
-          <p id="message" role="status"></p>
-        </form>
-      </section>
+  <!-- Navbar -->
+  <header>
+    <div class="logo" onclick="document.querySelector('[data-target=\'home\']').click()">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      City Hospital
     </div>
+    <nav>
+      <a class="nav-link active" data-target="home">Home</a>
+      <a class="nav-link" data-target="doctors">Find a Doctor</a>
+      <a class="nav-link" data-target="specialties">Specialties & Services</a>
+      <a class="nav-link" data-target="status">Check Status</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>Care that fits your day.</h1>
+      <p>World-class specialists, state-of-the-art facilities, and seamless digital booking. Your health is our priority.</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- HOME VIEW -->
+    <section id="home" class="view-section active">
+      <div style="text-align: center; max-width: 800px; margin: 20px auto;">
+        <h2 style="font-size: 36px; color: var(--primary); margin-bottom: 20px;">Welcome to City Hospital</h2>
+        <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 40px;">Providing world-class healthcare with state-of-the-art facilities and experienced specialists. Your journey to better health starts here.</p>
+        
+        <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 60px;">
+          <button class="btn" style="padding: 15px 30px; font-size: 18px; box-shadow: var(--shadow);" onclick="document.querySelector('[data-target=\'doctors\']').click()">Book an Appointment</button>
+          <button class="btn btn-outline" style="padding: 15px 30px; font-size: 18px;" onclick="document.querySelector('[data-target=\'specialties\']').click()">Explore Specialties</button>
+        </div>
+        
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); text-align: left;">
+          <div class="card" style="cursor: default;">
+            <div style="color: var(--primary); margin-bottom: 15px;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+            </div>
+            <div class="card-title">Expert Doctors</div>
+            <div class="card-desc">Consult with highly qualified specialists across various medical fields.</div>
+          </div>
+          <div class="card" style="cursor: default;">
+            <div style="color: var(--primary); margin-bottom: 15px;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" /></svg>
+            </div>
+            <div class="card-title">24/7 Care</div>
+            <div class="card-desc">Round-the-clock emergency services and patient support.</div>
+          </div>
+          <div class="card" style="cursor: default;">
+            <div style="color: var(--primary); margin-bottom: 15px;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+            </div>
+            <div class="card-title">Easy Booking</div>
+            <div class="card-desc">Seamless digital appointment scheduling from the comfort of your home.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOCTORS VIEW -->
+    <section id="doctors" class="view-section">
+      <div class="section-header">
+        <h2>Our Doctors</h2>
+        <input type="text" id="doctor-search" class="search-bar" placeholder="Filter by specialty (e.g., Cardiology)...">
+      </div>
+      <div id="doctors-grid" class="grid">
+        <div class="loader">Loading doctors...</div>
+      </div>
+    </section>
+
+    <!-- SPECIALTIES & SERVICES VIEW -->
+    <section id="specialties" class="view-section">
+      <div class="section-header">
+        <h2>Medical Specialties</h2>
+      </div>
+      <div id="specialties-grid" class="grid" style="margin-bottom: 50px;">
+        <div class="loader">Loading specialties...</div>
+      </div>
+
+      <div class="section-header">
+        <h2>Support Clinics & Services</h2>
+      </div>
+      <div id="services-grid" class="grid">
+        <div class="loader">Loading services...</div>
+      </div>
+    </section>
+
+    <!-- CHECK STATUS VIEW -->
+    <section id="status" class="view-section">
+      <div class="lookup-card">
+        <h2 style="color: var(--primary); margin-bottom: 15px;">Check Appointments</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Enter your Appointment ID  or Phone Number to view your appointments.</p>
+        
+        <form id="lookup-form">
+          <div class="form-group">
+            <input type="text" id="lookup-id" class="form-control" required placeholder="APPT-XXXX | Phone Number">
+          </div>
+          <button type="submit" class="btn" style="width: 100%;">Check Status</button>
+        </form>
+
+        <div id="status-result">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <script>
-    const doctorSelect = document.querySelector("#doctor");
-    const slotSelect = document.querySelector("#slot");
-    const doctorHint = document.querySelector("#doctor-hint");
-    const dateInput = document.querySelector("#date");
-    const form = document.querySelector("#appointment-form");
-    const submitButton = document.querySelector("#submit");
-    const message = document.querySelector("#message");
-    let doctors = [];
+  <!-- BOOKING MODAL -->
+  <div class="modal-overlay" id="booking-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      
+      <!-- Booking Form -->
+      <div id="booking-step">
+        <div class="modal-header">
+          <h3 id="modal-doctor-name">Book Appointment</h3>
+          <p id="modal-doctor-dept">Department</p>
+        </div>
+        
+        <form id="booking-form">
+          <input type="hidden" id="modal-doctor-id" name="doctor_id">
+          
+          <div class="form-group">
+            <label>Patient Name</label>
+            <input type="text" name="patient_name" class="form-control" required placeholder="Your full name">
+          </div>
+          
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" name="patient_phone" class="form-control" required placeholder="9876543210">
+          </div>
+          
+          <div class="form-group">
+            <label>Select Date</label>
+            <input type="date" name="date" id="booking-date" class="form-control" required>
+            <small style="color: var(--text-muted); margin-top: 5px; display: block;" id="available-days-hint"></small>
+          </div>
+          
+          <div class="form-group">
+            <label>Available Time Slots</label>
+            <div class="slot-grid" id="slot-container">
+              <!-- Slots populated here -->
+              <div style="grid-column: 1/-1; color: var(--text-muted); font-size: 14px;">Select a date to see slots.</div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Reason for Visit (Optional)</label>
+            <textarea name="reason" class="form-control" placeholder="Briefly describe your symptoms..." style="resize: none;"></textarea>
+          </div>
+          
+          <button type="submit" class="btn" id="btn-submit" style="width: 100%; padding: 14px; font-size: 16px;">Confirm Booking</button>
+          <div id="booking-error" style="color: #b43e32; margin-top: 15px; text-align: center; font-size: 14px;"></div>
+        </form>
+      </div>
 
-    dateInput.min = new Date().toISOString().slice(0, 10);
+      <!-- Success Step -->
+      <div id="success-step" class="success-screen" style="display: none;">
+        <div class="success-icon">✓</div>
+        <h3 style="color: var(--primary-dark); font-size: 24px;">Booking Successful!</h3>
+        <p style="color: var(--text-muted); margin-top: 10px;">Your appointment has been registered.</p>
+        
+        <div class="appt-id" id="success-id">APPT-XXXX</div>
+        
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Please keep this ID handy for checking your status.</p>
+        <button type="button" class="btn" onclick="closeModal()" style="width: 100%;">Done</button>
+      </div>
+    </div>
+  </div>
 
-    function showMessage(text, type) {
-      message.textContent = text;
-      message.className = type || "";
-    }
+  <!-- Chatbot Widget -->
+  <div id="chatbot-widget" class="chatbot-widget">
+    <button id="chatbot-toggle" class="chatbot-toggle">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+      </svg>
+    </button>
+    
+    <div id="chatbot-window" class="chatbot-window">
+      <div class="chatbot-header">
+        <div class="chatbot-title">
+          <div class="chatbot-avatar">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+          </div>
+          City Hospital
+        </div>
+        <button id="chatbot-close" class="chatbot-close">×</button>
+      </div>
+      
+      <div id="chatbot-messages" class="chatbot-messages">
+        <div class="chat-message bot">
+          <div class="chat-bubble">Hi! Welcome to City Hospital. I'll be assisting you today.</div>
+        </div>
+        <div class="chat-message bot">
+          <div class="chat-bubble">How can I help you today?</div>
+        </div>
+      </div>
+      
+      <div class="chatbot-input-area">
+        <form id="chatbot-form" style="display:flex; width: 100%;">
+          <input type="text" id="chatbot-input" placeholder="Type a message..." required autocomplete="off">
+          <button type="submit" class="chatbot-send">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" /></svg>
+          </button>
+        </form>
+      </div>
+      
+      <div class="chatbot-footer">
+        Powered by <a href="https://perfox.ai/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none; font-weight: bold;">Perfox.ai</a>
+      </div>
+    </div>
+  </div>
 
-    function selectedDoctor() {
-      return doctors.find((doctor) => doctor.id === doctorSelect.value);
-    }
-
-    function updateSlots() {
-      const doctor = selectedDoctor();
-      slotSelect.innerHTML = "";
-      if (!doctor) {
-        slotSelect.disabled = true;
-        slotSelect.add(new Option("Choose a doctor first", ""));
-        doctorHint.textContent = "";
-        return;
-      }
-      slotSelect.disabled = false;
-      slotSelect.add(new Option("Select a time", ""));
-      doctor.availableSlots.forEach((slot) => slotSelect.add(new Option(slot, slot)));
-      doctorHint.textContent = `${doctor.specialization} · ${doctor.hospitalBranch} · Rs. ${doctor.consultationFee}`;
-    }
-
-    async function loadDoctors() {
-      try {
-        const response = await fetch("/doctors");
-        if (!response.ok) throw new Error("Could not load doctors");
-        doctors = (await response.json()).data;
-        doctorSelect.innerHTML = "";
-        doctorSelect.add(new Option("Select a doctor", ""));
-        doctors.forEach((doctor) => doctorSelect.add(new Option(`${doctor.name} - ${doctor.specialization}`, doctor.id)));
-      } catch (error) {
-        doctorSelect.innerHTML = "";
-        doctorSelect.add(new Option("Doctors unavailable", ""));
-        showMessage(error.message, "error");
-      }
-    }
-
-    doctorSelect.addEventListener("change", updateSlots);
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      showMessage("Sending booking request...", "");
-      submitButton.disabled = true;
-      const payload = Object.fromEntries(new FormData(form));
-      try {
-        const response = await fetch("/appointments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-        if (!response.ok) {
-          const detail = typeof result.detail === "string" ? result.detail : result.detail?.message || "Booking failed";
-          throw new Error(detail);
-        }
-        showMessage(`Request ${result.data.id} created successfully. Status: ${result.data.status}.`, "success");
-        form.reset();
-        updateSlots();
-      } catch (error) {
-        showMessage(error.message, "error");
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
-
-    loadDoctors();
-  </script>
+  <script src="app.js?v=2" defer></script>
 </body>
 </html>
