@@ -27,9 +27,9 @@ class Doctor(BaseModel):
     name: str = Field(..., examples=["Dr Naveen A J"])
     designation: str = Field(..., examples=["Senior Consultant - Interventional Cardiologist"])
     department: str = Field(..., examples=["Interventional Cardiologist"])
-    description: Optional[str] = Field("", examples=["Senior Consultant Interventional Cardiologist at City Hospital"])
+    description: Optional[str] = Field("", examples=["Senior Consultant Interventional Cardiologist at New Care Med Center"])
     experience_years: Optional[int] = Field(None, examples=[12])
-    hospital_branch: str = Field("City Hospital Hospitals, Bangalore")
+    hospital_branch: str = Field("New Care Med Center Hospitals, Bangalore")
     available_days: List[str] = Field([], examples=[["Monday", "Wednesday", "Friday"]])
     available_slots: List[str] = Field([], examples=[["09:00", "10:30", "14:00"]])
 
