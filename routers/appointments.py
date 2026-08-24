@@ -18,10 +18,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from models import (  # type: ignore # pyrefly: ignore [missing-import]
     AppointmentCreateRequest,
-<<<<<<< HEAD
     AppointmentDeleteLookupResponse,
-=======
->>>>>>> e4cc9ad (Add delete appointment feature to backend API and frontend Check Status UI)
     AppointmentDeleteResponse,
     AppointmentListResponse,
     AppointmentResponse,
