@@ -65,6 +65,13 @@ main { max-width: 1200px; margin: 40px auto; padding: 0 20px; min-height: 50vh;}
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
 .btn-outline:hover { background: var(--secondary); }
+.btn-danger { background: #d9534f; color: white; border: none; }
+.btn-danger:hover { background: #c9302c; }
+.btn-danger-outline { background: transparent; color: #c9302c; border: 1px solid #e78280; }
+.btn-danger-outline:hover { background: #c9302c; color: white; border-color: #c9302c; }
+.btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 6px; font-weight: 500; }
+.status-actions { margin-top: 15px; padding-top: 12px; border-top: 1px dashed var(--border); display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+
 
 /* Modal (Glassmorphism) */
 .modal-overlay { position: fixed; inset: 0; background: rgba(24, 37, 43, 0.4); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s; padding: 20px;}

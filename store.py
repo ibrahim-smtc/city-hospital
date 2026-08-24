@@ -416,3 +416,4 @@ def delete_appointment(appointment_id: str) -> dict | None:
     conn.close()
 
     return appointment
+

@@ -18,7 +18,10 @@ from fastapi import APIRouter, HTTPException, Query
 
 from models import (  # type: ignore # pyrefly: ignore [missing-import]
     AppointmentCreateRequest,
+<<<<<<< HEAD
     AppointmentDeleteLookupResponse,
+=======
+>>>>>>> e4cc9ad (Add delete appointment feature to backend API and frontend Check Status UI)
     AppointmentDeleteResponse,
     AppointmentListResponse,
     AppointmentResponse,
@@ -229,3 +232,33 @@ def del_appt(
         status_code=400,
         detail="Please provide either 'appointment_id' or 'phone' as a query parameter",
     )
+
+
+@router.delete(
+    "/{appointment_id}",
+    response_model=AppointmentDeleteResponse,
+    summary="Delete an appointment by ID",
+    description=(
+        "Delete an existing appointment by its unique ID (e.g. APPT-1001). "
+        "Frees up the doctor's time slot for future bookings."
+    ),
+    responses={
+        404: {"description": "Appointment ID was not found."},
+    },
+)
+def remove_appointment(appointment_id: str):
+    """
+    Cancel and delete an appointment by its ID.
+    Returns 404 if the appointment doesn't exist.
+    """
+    deleted = delete_appointment(appointment_id)
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    return {
+        "success": True,
+        "message": f"Appointment {appointment_id} deleted successfully",
+        "data": deleted,
+    }
+

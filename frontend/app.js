@@ -267,6 +267,12 @@ document.getElementById('lookup-form').addEventListener('submit', async (e) => {
             <span style="color: var(--text-muted)">Status</span>
             <span class="badge ${badgeClass}">${data.status}</span>
           </div>
+          <div class="status-actions">
+            <button type="button" class="btn btn-danger-outline btn-sm" onclick="handleDeleteAppointment('${data.id}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px; vertical-align: -2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Cancel / Delete
+            </button>
+          </div>
         </div>
       `;
     }).join('');
@@ -275,6 +281,36 @@ document.getElementById('lookup-form').addEventListener('submit', async (e) => {
     resultDiv.innerHTML = `<div style="color: #b43e32; padding: 15px; background: #f8d7da; border-radius: 8px;">No appointments found. Please check your ID or phone number.</div>`;
   }
 });
+
+// --- Delete Appointment Handler ---
+window.handleDeleteAppointment = async function(appointmentId) {
+  if (!confirm(`Are you sure you want to cancel and delete appointment ${appointmentId}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/appointments/${encodeURIComponent(appointmentId)}`, {
+      method: 'DELETE'
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.detail || 'Failed to delete appointment');
+    }
+
+    alert(`Appointment ${appointmentId} has been successfully deleted.`);
+
+    // Refresh the status list
+    const form = document.getElementById('lookup-form');
+    if (form) {
+      form.dispatchEvent(new Event('submit'));
+    }
+  } catch (err) {
+    alert(`Error deleting appointment: ${err.message}`);
+  }
+};
+
 
 // Initialize
 init();
