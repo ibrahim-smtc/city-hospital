@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 
@@ -106,14 +106,14 @@
     <!-- CHECK STATUS VIEW -->
     <section id="status" class="view-section">
       <div class="lookup-card">
-        <h2 style="color: var(--primary); margin-bottom: 15px;">Check Appointments</h2>
-        <p style="color: var(--text-muted); margin-bottom: 30px;">Enter your Appointment ID  or Phone Number to view your appointments.</p>
+        <h2 style="color: var(--primary); margin-bottom: 15px;">Check & Manage Appointments</h2>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Enter your Appointment ID or Phone Number to view status or cancel/delete your appointments.</p>
         
         <form id="lookup-form">
           <div class="form-group">
-            <input type="text" id="lookup-id" class="form-control" required placeholder="APPT-XXXX | Phone Number">
+            <input type="text" id="lookup-id" class="form-control" required placeholder="e.g. APPT-1001 or 9876543211">
           </div>
-          <button type="submit" class="btn" style="width: 100%;">Check Status</button>
+          <button type="submit" class="btn" style="width: 100%;">Find Appointments</button>
         </form>
 
         <div id="status-result">
@@ -230,6 +230,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2" defer></script>
+  <script src="app.js?v=3" defer></script>
 </body>
 </html>
