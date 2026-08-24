@@ -1,3 +1,6 @@
 .venv/
+virtual/
 __pycache__/
 *.py[cod]
+*.db
+.vscode/
