@@ -179,18 +179,7 @@ class AppointmentListResponse(BaseModel):
 
 
 class AppointmentDeleteResponse(BaseModel):
-    """Response for DELETE /appointments/del_appt — appointment deleted successfully."""
+    """Response for DELETE /appointments/{id} — appointment deleted successfully."""
     success: bool = True
     message: str = "Appointment deleted successfully"
     data: Appointment
-
-
-class AppointmentDeleteLookupResponse(BaseModel):
-    """
-    Response for DELETE /appointments/del_appt when only a phone number is provided.
-    Returns the list of matching appointments so the user can choose which one to delete.
-    """
-    success: bool = True
-    message: str = "Multiple appointments found. Please provide the appointment_id to delete."
-    count: int
-    data: List[Appointment]

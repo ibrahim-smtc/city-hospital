@@ -7,7 +7,7 @@ Endpoints:
   POST   /appointments                   — book a new appointment
   GET    /appointments                   — list appointments (with filters)
   GET    /appointments/{appointment_id}  — check one appointment's status
-  DELETE /appointments/del_appt          — delete an appointment by ID or phone lookup
+  DELETE /appointments/{appointment_id}  — cancel and delete an appointment
 """
 
 import json
@@ -18,7 +18,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from models import (  # type: ignore # pyrefly: ignore [missing-import]
     AppointmentCreateRequest,
-    AppointmentDeleteLookupResponse,
     AppointmentDeleteResponse,
     AppointmentListResponse,
     AppointmentResponse,
@@ -153,88 +152,9 @@ def check_appointment(appointment_id: str):
 
 
 @router.delete(
-    "/del_appt",
-    response_model=None,
-    summary="Delete an appointment",
-    description=(
-        "Delete an appointment by its ID.\n\n"
-        "**Two ways to use this endpoint:**\n"
-        "1. **If you know the appointment ID** — pass `appointment_id` (e.g. APPT-1001) "
-        "and the appointment will be deleted immediately.\n"
-        "2. **If you don't know the ID** — pass `phone` (the patient's mobile number) "
-        "and the endpoint will return all appointments for that number. "
-        "Then call this endpoint again with the chosen `appointment_id` to delete it."
-    ),
-    responses={
-        200: {
-            "description": "Appointment deleted successfully.",
-            "model": AppointmentDeleteResponse,
-        },
-        404: {"description": "Appointment or phone number not found."},
-        400: {"description": "Neither appointment_id nor phone was provided."},
-    },
-)
-def del_appt(
-    appointment_id: Optional[str] = Query(
-        None,
-        description="Appointment ID to delete (e.g. APPT-1001)",
-        examples=["APPT-1001"],
-    ),
-    phone: Optional[str] = Query(
-        None,
-        description="Patient's mobile number to look up appointments",
-        examples=["9876543211"],
-    ),
-):
-    """
-    Delete an appointment.
-
-    - If `appointment_id` is provided, the appointment is deleted directly.
-    - If only `phone` is provided, all appointments for that phone number
-      are returned so the user can choose which one to delete.
-    - If neither is provided, a 400 error is returned.
-    """
-
-    # ── Case 1: appointment_id provided → delete it directly ──
-    if appointment_id:
-        deleted = delete_appointment(appointment_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Appointment not found")
-        return {
-            "success": True,
-            "message": "Appointment deleted successfully",
-            "data": deleted,
-        }
-
-    # ── Case 2: only phone provided → look up appointments ──
-    if phone:
-        appointments = list_appointments(phone=phone)
-        if not appointments:
-            raise HTTPException(
-                status_code=404,
-                detail="No appointments found for this phone number",
-            )
-        return {
-            "success": True,
-            "message": (
-                "Multiple appointments found. "
-                "Please provide the appointment_id to delete."
-            ),
-            "count": len(appointments),
-            "data": appointments,
-        }
-
-    # ── Case 3: nothing provided → bad request ──
-    raise HTTPException(
-        status_code=400,
-        detail="Please provide either 'appointment_id' or 'phone' as a query parameter",
-    )
-
-
-@router.delete(
     "/{appointment_id}",
     response_model=AppointmentDeleteResponse,
-    summary="Delete an appointment by ID",
+    summary="Delete an appointment",
     description=(
         "Delete an existing appointment by its unique ID (e.g. APPT-1001). "
         "Frees up the doctor's time slot for future bookings."
@@ -258,4 +178,3 @@ def remove_appointment(appointment_id: str):
         "message": f"Appointment {appointment_id} deleted successfully",
         "data": deleted,
     }
-

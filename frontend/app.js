@@ -289,7 +289,7 @@ window.handleDeleteAppointment = async function(appointmentId) {
   }
 
   try {
-    const res = await fetch(`/appointments/del_appt?appointment_id=${encodeURIComponent(appointmentId)}`, {
+    const res = await fetch(`/appointments/${encodeURIComponent(appointmentId)}`, {
       method: 'DELETE'
     });
 
