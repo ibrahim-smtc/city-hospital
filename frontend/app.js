@@ -1,3 +1,42 @@
+// --- Theme (noir / paper) ---
+// The initial theme is resolved by the inline script in <head> before first paint;
+// this only wires up the switch and keeps the choice sticky.
+const THEME_KEY = 'ncmc-theme';
+const THEME_COLORS = { dark: '#080808', light: '#f4f4f2' };
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+
+  const toggle = document.getElementById('theme-toggle');
+  const meta = document.getElementById('meta-theme-color');
+
+  // The switch labels are static spans that crossfade in CSS — only the
+  // assistive-tech state and the browser chrome colour need updating here.
+  if (toggle) toggle.setAttribute('aria-checked', theme === 'light' ? 'true' : 'false');
+  if (meta) meta.setAttribute('content', THEME_COLORS[theme]);
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch (e) {
+    // Storage unavailable (private mode) — the theme still applies for this session.
+  }
+}
+
+// Sync the switch with whatever the pre-paint script decided.
+applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+// Follow the OS only while the visitor has not made an explicit choice.
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (err) { /* ignore */ }
+  if (!saved) applyTheme(e.matches ? 'light' : 'dark');
+});
+
 // --- State ---
 let state = {
   doctors: [],
@@ -53,7 +92,8 @@ async function init() {
     renderDoctors(state.doctors);
     renderSpecialties(state.specialties);
     renderServices(state.services);
-    
+    renderStats();
+
     // Setup Date picker min date
     document.getElementById('booking-date').min = new Date().toISOString().split('T')[0];
 
@@ -63,19 +103,40 @@ async function init() {
 }
 
 // --- Renderers ---
+function renderStats() {
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value) el.textContent = value;
+  };
+  set('stat-doctors', state.doctors.length);
+  set('stat-specialties', state.specialties.length);
+  set('stat-services', state.services.length);
+}
+
 function renderDoctors(doctors) {
   const grid = document.getElementById('doctors-grid');
   grid.innerHTML = '';
   if (doctors.length === 0) {
-    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">No doctors found.</div>`;
+    grid.innerHTML = `<div class="grid-empty">No doctors found.</div>`;
     return;
   }
   
   doctors.forEach(doc => {
     const card = document.createElement('div');
     card.className = 'card';
+
+    // The card is the button here, so it has to answer to the keyboard too.
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `Book an appointment with ${doc.name}`);
     card.onclick = () => openBookingModal(doc.id);
-    
+    card.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openBookingModal(doc.id);
+      }
+    };
+
     const exp = doc.experience_years ? `${doc.experience_years} Yrs Exp.` : '';
     
     card.innerHTML = `
@@ -84,7 +145,7 @@ function renderDoctors(doctors) {
       <div class="card-desc">${doc.designation}</div>
       <div class="card-footer">
         <span>${exp}</span>
-        <span style="color: var(--primary); font-weight: 600;">Book →</span>
+        <span class="card-cta">Book →</span>
       </div>
     `;
     grid.appendChild(card);
@@ -94,7 +155,7 @@ function renderDoctors(doctors) {
 function renderSpecialties(specs) {
   const grid = document.getElementById('specialties-grid');
   grid.innerHTML = specs.map(s => `
-    <div class="card" style="cursor: default;">
+    <div class="card card-static">
       <div class="card-title">${s.name}</div>
       <div class="card-desc" style="font-size: 14px;">${s.description || 'Advanced medical care.'}</div>
     </div>
@@ -104,7 +165,7 @@ function renderSpecialties(specs) {
 function renderServices(servs) {
   const grid = document.getElementById('services-grid');
   grid.innerHTML = servs.map(s => `
-    <div class="card" style="cursor: default;">
+    <div class="card card-static">
       <div class="card-title">${s.name}</div>
       <div class="card-desc" style="font-size: 14px;">${s.description || 'Support clinic service.'}</div>
     </div>
@@ -121,6 +182,8 @@ document.getElementById('doctor-search').addEventListener('input', (e) => {
 });
 
 // --- Modal Logic ---
+let lastFocusedBeforeModal = null;
+
 async function openBookingModal(doctorId) {
   // Fetch full details to get slots
   try {
@@ -137,7 +200,7 @@ async function openBookingModal(doctorId) {
     
     // Reset form
     document.getElementById('booking-form').reset();
-    document.getElementById('slot-container').innerHTML = '<div style="grid-column: 1/-1; color: var(--text-muted); font-size: 14px;">Select a date to see slots.</div>';
+    document.getElementById('slot-container').innerHTML = '<div class="slot-empty">Select a date to see slots.</div>';
     document.getElementById('booking-error').textContent = '';
     
     // Show form, hide success
@@ -145,6 +208,12 @@ async function openBookingModal(doctorId) {
     document.getElementById('success-step').style.display = 'none';
     
     document.getElementById('booking-modal').classList.add('active');
+    document.body.classList.add('modal-open');
+
+    // Remember where focus came from so it can be handed back on close.
+    lastFocusedBeforeModal = document.activeElement;
+    const firstField = document.querySelector('#booking-form .form-control');
+    if (firstField) firstField.focus();
   } catch (e) {
     alert("Failed to load doctor details.");
   }
@@ -152,8 +221,33 @@ async function openBookingModal(doctorId) {
 
 function closeModal() {
   document.getElementById('booking-modal').classList.remove('active');
+  document.body.classList.remove('modal-open');
   state.currentDoctor = null;
+
+  // Hand focus back to whatever opened the dialog.
+  if (lastFocusedBeforeModal && document.contains(lastFocusedBeforeModal)) {
+    lastFocusedBeforeModal.focus();
+  }
+  lastFocusedBeforeModal = null;
 }
+
+// Click the backdrop (not the panel) to dismiss.
+document.getElementById('booking-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// Escape closes whichever overlay is open, modal first.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const modal = document.getElementById('booking-modal');
+  const chat = document.getElementById('chatbot-window');
+  if (modal.classList.contains('active')) {
+    closeModal();
+  } else if (chat.classList.contains('active')) {
+    chat.classList.remove('active');
+    document.getElementById('chatbot-toggle').focus();
+  }
+});
 
 // --- Slot Selection ---
 document.getElementById('booking-date').addEventListener('change', () => {
@@ -162,7 +256,7 @@ document.getElementById('booking-date').addEventListener('change', () => {
   const container = document.getElementById('slot-container');
   
   if(slots.length === 0) {
-    container.innerHTML = '<div style="grid-column: 1/-1; color: var(--accent);">No slots available.</div>';
+    container.innerHTML = '<div class="slot-empty warn">No slots available.</div>';
     return;
   }
 
@@ -248,23 +342,23 @@ document.getElementById('lookup-form').addEventListener('submit', async (e) => {
       return `
         <div class="status-details">
           <div class="status-row">
-            <span style="color: var(--text-muted)">ID</span>
-            <span style="font-weight: 500">${data.id}</span>
+            <span class="status-key">ID</span>
+            <span class="status-val">${data.id}</span>
           </div>
           <div class="status-row">
-            <span style="color: var(--text-muted)">Patient</span>
-            <span style="font-weight: 500">${data.patient_name}</span>
+            <span class="status-key">Patient</span>
+            <span class="status-val">${data.patient_name}</span>
           </div>
           <div class="status-row">
-            <span style="color: var(--text-muted)">Doctor</span>
-            <span style="font-weight: 500">${data.doctor_name}</span>
+            <span class="status-key">Doctor</span>
+            <span class="status-val">${data.doctor_name}</span>
           </div>
           <div class="status-row">
-            <span style="color: var(--text-muted)">Date & Time</span>
-            <span style="font-weight: 500">${data.date} at ${data.slot}</span>
+            <span class="status-key">Date & Time</span>
+            <span class="status-val">${data.date} at ${data.slot}</span>
           </div>
           <div class="status-row" style="margin-top: 15px;">
-            <span style="color: var(--text-muted)">Status</span>
+            <span class="status-key">Status</span>
             <span class="badge ${badgeClass}">${data.status}</span>
           </div>
           <div class="status-actions">
@@ -278,7 +372,7 @@ document.getElementById('lookup-form').addEventListener('submit', async (e) => {
     }).join('');
   } catch (err) {
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = `<div style="color: #b43e32; padding: 15px; background: #f8d7da; border-radius: 8px;">No appointments found. Please check your ID or phone number.</div>`;
+    resultDiv.innerHTML = `<div class="notice-error">No appointments found. Please check your ID or phone number.</div>`;
   }
 });
 
