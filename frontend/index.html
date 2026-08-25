@@ -15,18 +15,21 @@
     })();
   </script>
   <title>New Care Med Center | Care That Fits Your Day</title>
+  <!-- Raster first as the fallback; browsers that understand SVG prefer
+       favicon.svg, which follows the OS light/dark theme. -->
   <link rel="icon" href="favicon.jpg" type="image/jpeg">
+  <link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=21">
+  <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
 
   <!-- Navbar -->
   <header>
     <div class="logo" onclick="document.querySelector('[data-target=\'home\']').click()">
-      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M0 0h24v24H0V0zM10 5h4v5h5v4h-5v5h-4v-5H5v-4h5V5z"/></svg>
       New Care Med Center
     </div>
     <div class="header-right">
@@ -248,7 +251,7 @@
       <div class="chatbot-header">
         <div class="chatbot-title">
           <div class="chatbot-avatar">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M0 0h24v24H0V0zM10 5h4v5h5v4h-5v5h-4v-5H5v-4h5V5z"/></svg>
           </div>
           <div>
             <div>New Care Assistant</div>
@@ -286,6 +289,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=21" defer></script>
+  <script src="app.js?v=23" defer></script>
 </body>
 </html>
