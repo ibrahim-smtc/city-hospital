@@ -204,7 +204,21 @@ header {
   text-transform: uppercase;
   letter-spacing: -0.02em;
 }
-.logo svg { width: 26px; height: 26px; fill: var(--fg); flex-shrink: 0; transition: fill .15s; }
+ /* --- Logo mark -----------------------------------------------------------
+   A hard-edged plate with the cross knocked clean out of it (fill-rule:
+   evenodd, so the cross is a real hole, not a second shape). The hole shows
+   the page ground, which means the mark inverts itself when the theme is
+   switched — bone plate / dark cross in noir, black plate / paper cross on
+   paper — with no second asset and no JS. Replaces the old rounded-corner
+   mark, which broke the no-radius rule the rest of the system follows.
+   -------------------------------------------------------------------------- */
+.logo svg {
+  width: 26px;
+  height: 26px;
+  fill: var(--fg);
+  flex-shrink: 0;
+  transition: fill .25s ease;
+}
 .logo:hover svg { fill: var(--signal); }
 
 nav { display: flex; gap: 4px; }
@@ -968,16 +982,16 @@ input[type="radio"][name="slot"] { display: none; }
   letter-spacing: 0.04em;
 }
 .chatbot-avatar {
-  width: 30px;
-  height: 30px;
-  background: var(--fg);
+  width: 26px;
+  height: 26px;
+  background: transparent;
   border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.chatbot-avatar svg { width: 19px; height: 19px; fill: var(--bg); }
+.chatbot-avatar svg { width: 26px; height: 26px; fill: var(--fg); transition: fill .25s ease; }
 .chatbot-status {
   display: block;
   font-family: var(--font-mono);

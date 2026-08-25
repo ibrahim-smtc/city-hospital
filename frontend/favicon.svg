@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="New Care Med Center">
+  <!--
+    Favicon for New Care Med Center.
+
+    Same mark as the site logo: a hard-edged plate with the medical cross
+    cut through it. Two differences from the inline version:
+
+      1. The cross is a painted shape here, not an evenodd hole. A hole
+         would be transparent, and a favicon has no page behind it to show
+         through — it would sit on whatever the browser chrome happens to be.
+      2. The arms are heavier (6/24 rather than 4/24) so the cross still
+         reads at 16px, where the inline proportions go spindly.
+
+    Colours follow the OS/browser theme, mirroring how the site logo
+    inverts when the page theme is switched.
+  -->
+  <style>
+    .plate { fill: #0d0d0d; }
+    .cross { fill: #f4f4f2; }
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #f2f0ec; }
+      .cross { fill: #080808; }
+    }
+  </style>
+  <path class="plate" d="M0 0h24v24H0V0z"/>
+  <path class="cross" d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/>
+</svg>
