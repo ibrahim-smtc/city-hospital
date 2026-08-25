@@ -17,7 +17,7 @@ from fastapi import FastAPI
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
 
-from routers import appointments, doctors, services, specialties  # type: ignore # pyrefly: ignore [missing-import]
+from routers import appointments, chat, doctors, services, specialties  # type: ignore # pyrefly: ignore [missing-import]
 
 # ---------------------------------------------------------------------------
 #  Create the FastAPI app
@@ -34,7 +34,8 @@ app = FastAPI(
         "4. Use the returned appointment ID with `GET /appointments/{id}`.\n\n"
         "## Other endpoints\n"
         "- `GET /specialties` — browse hospital specialties\n"
-        "- `GET /services` — browse support services and clinics"
+        "- `GET /services` — browse support services and clinics\n"
+        "- `POST /chat` — send queries to the hospital assistant"
     ),
     version="2.0.0",
     contact={"name": "Hospital API Team"},
@@ -47,6 +48,7 @@ app.include_router(doctors.router)
 app.include_router(appointments.router)
 app.include_router(specialties.router)
 app.include_router(services.router)
+app.include_router(chat.router)
 
 # ---------------------------------------------------------------------------
 #  Mount the static frontend (if it exists)

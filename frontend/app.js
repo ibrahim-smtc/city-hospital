@@ -322,6 +322,7 @@ const chatClose = document.getElementById('chatbot-close');
 const chatForm = document.getElementById('chatbot-form');
 const chatInput = document.getElementById('chatbot-input');
 const chatMessages = document.getElementById('chatbot-messages');
+const chatQuickActions = document.getElementById('chat-quick-actions');
 
 chatToggle.addEventListener('click', () => {
   chatWindow.classList.toggle('active');
@@ -334,24 +335,78 @@ chatClose.addEventListener('click', () => {
   chatWindow.classList.remove('active');
 });
 
+// Quick action chips click handler
+if (chatQuickActions) {
+  chatQuickActions.querySelectorAll('.chat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.dataset.query;
+      if (query) {
+        handleSendMessage(query);
+      }
+    });
+  });
+}
+
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
-  
+  chatInput.value = '';
+  handleSendMessage(text);
+});
+
+async function handleSendMessage(text) {
   // Add user message
   appendMessage(text, 'user');
-  chatInput.value = '';
   
-  // Auto-scroll
+  // Show typing indicator
+  const typingElem = showTypingIndicator();
   chatMessages.scrollTop = chatMessages.scrollHeight;
   
-  // Fake AI typing delay
-  setTimeout(() => {
-    appendMessage("We'll be launching the AI chat assistant soon! Thank you for your patience.", 'bot');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }, 1000);
-});
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    
+    // Simulate brief natural typing pause
+    await new Promise(r => setTimeout(r, 450));
+    removeTypingIndicator(typingElem);
+    
+    const reply = data.reply || "Thank you for contacting New Care Med Center. How else may I assist you?";
+    appendMessage(reply, 'bot');
+  } catch (err) {
+    await new Promise(r => setTimeout(r, 300));
+    removeTypingIndicator(typingElem);
+    appendMessage("Thank you for reaching out to New Care Med Center! We're here to assist you.", 'bot');
+  }
+  
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'chat-message bot typing-msg';
+  msgDiv.innerHTML = `
+    <div class="chat-bubble">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  chatMessages.appendChild(msgDiv);
+  return msgDiv;
+}
+
+function removeTypingIndicator(elem) {
+  if (elem && elem.parentNode) {
+    elem.parentNode.removeChild(elem);
+  }
+}
 
 function appendMessage(text, sender) {
   const msgDiv = document.createElement('div');
@@ -359,3 +414,4 @@ function appendMessage(text, sender) {
   msgDiv.innerHTML = `<div class="chat-bubble">${text}</div>`;
   chatMessages.appendChild(msgDiv);
 }
+

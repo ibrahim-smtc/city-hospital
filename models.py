@@ -183,3 +183,41 @@ class AppointmentDeleteResponse(BaseModel):
     success: bool = True
     message: str = "Appointment deleted successfully"
     data: Appointment
+
+
+# ===========================================================================
+#  CHAT MODELS
+# ===========================================================================
+
+class ChatRequest(BaseModel):
+    """Request body for POST /chat — sending a message to the hospital assistant."""
+    message: str = Field(
+        ..., min_length=1,
+        description="Patient or user query",
+        examples=["What are your cardiology consultation hours?"],
+    )
+    session_id: Optional[str] = Field(
+        None,
+        description="Optional session ID for conversation tracking",
+        examples=["session_123"],
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "message": "What are your cardiology consultation hours?",
+                "session_id": "session_123"
+            }
+        }
+    }
+
+
+class ChatResponse(BaseModel):
+    """Response for POST /chat."""
+    success: bool = True
+    reply: str = Field(
+        "We'll be launching the AI chat assistant soon! Thank you for your patience.",
+        examples=["We'll be launching the AI chat assistant soon! Thank you for your patience."]
+    )
+    session_id: Optional[str] = None
+
