@@ -2,7 +2,7 @@
 // The initial theme is resolved by the inline script in <head> before first paint;
 // this only wires up the switch and keeps the choice sticky.
 const THEME_KEY = 'ncmc-theme';
-const THEME_COLORS = { dark: '#080808', light: '#f4f2ed' };
+const THEME_COLORS = { dark: '#080808', light: '#f4f4f2' };
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);

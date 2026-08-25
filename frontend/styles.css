@@ -4,11 +4,21 @@
    Rules: no rounded corners, no soft shadows, no gradients on surfaces.
           Hard rules, hard offsets, one accent (amber), everything else grey.
 
+   Stroke weight carries meaning, so it is never decorative:
+     2px  things you act on   — buttons, the theme switch, active nav,
+                                the header edge, and panels that take over
+                                the screen (modal, chat window).
+     1px  things you read     — cards, fields, slot pills, dividers.
+          Focus doubles a 1px stroke with an inset shadow, so the weight
+          jumps on interaction without shifting layout.
+   Amber appears roughly once per view. When it starts repeating (it was on
+   all 48 doctor cards) it stops reading as a signal and becomes texture.
+
    Two themes share one token contract:
      --bg  = the ground the page sits on
      --fg  = the maximum-contrast ink (headings, button fills, active states)
    NOIR  (default) : --bg is near-black, --fg is bone.
-   PAPER ([data-theme="light"]) : --bg is warm paper, --fg is near-black.
+   PAPER ([data-theme="light"]) : --bg is near-neutral paper, --fg near-black.
    Every rule below is written against the roles, so both themes stay in sync.
    ========================================================================== */
 
@@ -20,8 +30,11 @@
   --surface-2:  #171717;
   --surface-3:  #1f1f1f;
 
-  /* --- Rules / borders --- */
-  --line:       #262626;
+  /* --- Rules / borders ---
+     --line is tuned so a 1px hairline reads the same against the dark card
+     surface as it does on paper (1.42 vs 1.43). In noir the card surface is
+     only 1.05 from the page ground, so this border does all the defining. */
+  --line:       #2f2f2f;
   --line-2:     #383838;
   --line-hi:    #f2f0ec;
 
@@ -42,12 +55,6 @@
   /* --- Hard-offset shadow ink --- */
   --sh:         #000000;
 
-  /* --- Hero treatment --- */
-  --hero-veil:  8, 8, 8;
-  --hero-a: 0.95; --hero-b: 0.72; --hero-c: 0.35;
-  --hero-scan:  rgba(0, 0, 0, 0.35);
-  --hero-filter: grayscale(1) contrast(1.25) brightness(0.42);
-
   /* --- Overlay + native control tinting --- */
   --overlay:    rgba(0, 0, 0, 0.82);
   --date-icon-filter: invert(1) brightness(0.8);
@@ -65,7 +72,7 @@
   --shadow-hover: none;
 
   /* --- Brutalist offsets --- */
-  --hard-fg:   5px 5px 0 var(--fg);
+  --hard-card: 4px 4px 0 var(--line-2);
   --hard-sm:   3px 3px 0 var(--sh);
 
   --font-display: 'Space Grotesk', 'Arial Black', Helvetica, sans-serif;
@@ -80,13 +87,15 @@
    keeps its contrast against paper instead of glowing off it.
    ========================================================================== */
 :root[data-theme="light"] {
-  --bg:         #f4f2ed;
-  --surface:    #fdfcfa;
-  --surface-2:  #efece5;
-  --surface-3:  #e6e2d9;
+  /* Near-neutral paper. The earlier values carried a cream cast that read
+     as dingy rather than clean once the page was mostly light. */
+  --bg:         #f4f4f2;
+  --surface:    #ffffff;
+  --surface-2:  #eeeeeb;
+  --surface-3:  #e5e5e1;
 
-  --line:       #d9d5cb;
-  --line-2:     #a8a396;
+  --line:       #dcdcd8;
+  --line-2:     #a9a9a3;
   --line-hi:    #0d0d0d;
 
   --fg:         #0d0d0d;
@@ -102,13 +111,6 @@
   --ok-dim:     #a8c9ad;
 
   --sh:         #0d0d0d;
-
-  /* Paper needs a heavier veil: dark type over a bright photo loses contrast
-     much faster than bone type over a dark one. */
-  --hero-veil:  244, 242, 237;
-  --hero-a: 0.97; --hero-b: 0.90; --hero-c: 0.58;
-  --hero-scan:  rgba(255, 255, 255, 0.32);
-  --hero-filter: grayscale(1) contrast(1.05) brightness(1.12);
 
   --overlay:    rgba(13, 13, 13, 0.55);
   --date-icon-filter: none;
@@ -166,7 +168,7 @@ body.modal-open { overflow: hidden; }
 /* Noir scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--line); border: 3px solid var(--bg); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
 /* Shared mono treatment for labels, meta and controls */
@@ -308,29 +310,34 @@ nav a.active { color: var(--bg); background: var(--fg); border-color: var(--fg);
   align-items: center;
   justify-content: flex-start;
   text-align: left;
-  color: var(--fg);
   overflow: hidden;
-  border-bottom: 2px solid var(--line-hi);
-  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+
+  /* The hero does NOT follow the theme. Washing a photograph out to paper
+     white produced mud with no contrast; a dark plate reads well under
+     both grounds and gives the light theme a focal anchor. These tokens
+     are scoped to .hero so nothing else inherits them. */
+  --hero-ink:     #f2f0ec;
+  --hero-ink-dim: #b4b1ab;
+  --hero-accent:  #e8b04b;
+  color: var(--hero-ink);
+  background: #080808;
 }
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
   background: url('hero.jpg') center/cover no-repeat;
-  filter: var(--hero-filter);
+  filter: grayscale(1) contrast(1.25) brightness(0.42);
 }
 .hero-overlay {
   position: absolute;
   inset: 0;
   background:
     linear-gradient(90deg,
-      rgba(var(--hero-veil), var(--hero-a)) 0%,
-      rgba(var(--hero-veil), var(--hero-b)) 45%,
-      rgba(var(--hero-veil), var(--hero-c)) 100%),
-    repeating-linear-gradient(0deg,
-      var(--hero-scan) 0px, var(--hero-scan) 1px,
-      transparent 1px, transparent 4px);
+      rgba(8, 8, 8, 0.95) 0%,
+      rgba(8, 8, 8, 0.70) 45%,
+      rgba(8, 8, 8, 0.30) 100%);
 }
 .hero-content {
   position: relative;
@@ -351,17 +358,17 @@ nav a.active { color: var(--bg); background: var(--fg); border-color: var(--fg);
 }
 .hero-content p {
   font-size: 15px;
-  color: var(--text-muted);
+  color: var(--hero-ink-dim);
   max-width: 46ch;
   line-height: 1.7;
-  border-left: 2px solid var(--signal);
+  border-left: 2px solid var(--hero-accent);
   padding-left: 16px;
 }
 
 /* --- Ledger strip: hard facts in mono, straight under the hero --- */
 .hero-stats {
   background: var(--bg);
-  border-bottom: 2px solid var(--line-hi);
+  border-bottom: 1px solid var(--line);
 }
 .hero-stats-inner {
   max-width: 1200px;
@@ -372,7 +379,7 @@ nav a.active { color: var(--bg); background: var(--fg); border-color: var(--fg);
 }
 .hero-stat {
   flex: 1 1 180px;
-  padding: 20px 24px 20px 0;
+  padding: 26px 24px 26px 0;
   margin-right: 24px;
   border-right: 1px solid var(--line);
   display: flex;
@@ -398,7 +405,7 @@ nav a.active { color: var(--bg); background: var(--fg); border-color: var(--fg);
 /* ==========================================================================
    LAYOUT
    ========================================================================== */
-main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; }
+main { max-width: 1200px; margin: 96px auto; padding: 0 40px; min-height: 50vh; }
 
 .view-section { display: none; animation: fadeIn 0.3s ease; }
 .view-section.active { display: block; }
@@ -411,10 +418,10 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--line-hi);
+  gap: 24px;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
 }
 .section-header h2 {
   font-size: 30px;
@@ -426,8 +433,8 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 }
 
 .search-bar {
-  padding: 12px 14px;
-  border: 2px solid var(--line-2);
+  padding: 13px 14px;
+  border: 1px solid var(--line-2);
   border-radius: 0;
   width: 320px;
   max-width: 100%;
@@ -439,18 +446,18 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   transition: border-color .15s, box-shadow .15s;
 }
 .search-bar::placeholder { color: var(--text-dim); }
-.search-bar:focus { border-color: var(--fg); box-shadow: var(--hard-sm); }
+.search-bar:focus { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
 
 /* ==========================================================================
    GRID + CARDS
    ========================================================================== */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
 
 .card {
   background: var(--surface);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: 0;
-  padding: 26px 24px;
+  padding: 30px 28px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -460,20 +467,20 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 .card::before {
   content: "";
   position: absolute;
-  top: -2px;
-  left: -2px;
+  top: -1px;
+  left: -1px;
   width: 0;
-  height: 6px;
+  height: 3px;
   background: var(--signal);
   transition: width .2s ease;
 }
 .card:hover {
-  transform: translate(-4px, -4px);
+  transform: translate(-2px, -2px);
   border-color: var(--fg);
   background: var(--surface-2);
-  box-shadow: var(--hard-fg);
+  box-shadow: var(--hard-card);
 }
-.card:hover::before { width: 56px; }
+.card:hover::before { width: 40px; }
 
 /* Cards that aren't buttons must not behave like buttons: no lift, no
    shadow, no cursor change — just enough response to confirm the hover. */
@@ -482,9 +489,9 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   transform: none;
   box-shadow: none;
   background: var(--surface);
-  border-color: var(--line-2);
+  border-color: var(--line);
 }
-.card-static:hover::before { width: 28px; }
+.card-static:hover::before { width: 24px; }
 
 .card-title {
   font-size: 18px;
@@ -496,13 +503,13 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 }
 .card-subtitle {
   font-size: 10px;
-  color: var(--signal);
+  color: var(--text-muted);
   font-weight: 500;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
-.card-desc { font-size: 14px; color: var(--text-muted); flex-grow: 1; line-height: 1.65; }
+.card-desc { font-size: 14px; color: var(--text-muted); flex-grow: 1; line-height: 1.7; }
 .card-footer {
   margin-top: 22px;
   padding-top: 14px;
@@ -597,10 +604,10 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   background: var(--surface);
   border: 2px solid var(--fg);
   border-radius: 0;
-  padding: 36px;
+  padding: 40px;
   width: 100%;
   max-width: 560px;
-  box-shadow: 10px 10px 0 var(--sh);
+  box-shadow: 8px 8px 0 var(--sh);
   transform: translate(6px, 6px);
   transition: transform 0.2s ease;
   max-height: 90vh;
@@ -611,7 +618,7 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 .modal-close {
   float: right;
   background: transparent;
-  border: 2px solid var(--line-2);
+  border: 1px solid var(--line-2);
   width: 32px;
   height: 32px;
   font-size: 18px;
@@ -622,7 +629,7 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 }
 .modal-close:hover { color: var(--bg); background: var(--fg); border-color: var(--fg); }
 
-.modal-header { margin-bottom: 28px; padding-bottom: 18px; border-bottom: 2px solid var(--line); }
+.modal-header { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .modal-header h3 {
   font-size: 24px;
   color: var(--fg);
@@ -631,7 +638,7 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   line-height: 1.15;
 }
 .modal-header p {
-  color: var(--signal);
+  color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 11px;
   text-transform: uppercase;
@@ -655,8 +662,8 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
 
 .form-control {
   width: 100%;
-  padding: 13px 14px;
-  border: 2px solid var(--line-2);
+  padding: 14px;
+  border: 1px solid var(--line-2);
   border-radius: 0;
   font-family: var(--font-display);
   font-size: 15px;
@@ -666,7 +673,7 @@ main { max-width: 1200px; margin: 72px auto; padding: 0 40px; min-height: 50vh; 
   transition: border-color .15s, box-shadow .15s;
 }
 .form-control::placeholder { color: var(--text-dim); }
-.form-control:focus { border-color: var(--fg); box-shadow: var(--hard-sm); }
+.form-control:focus { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
 textarea.form-control { min-height: 96px; resize: vertical; }
 
 /* Keep the native date picker legible on a dark field */
@@ -689,9 +696,9 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
    ========================================================================== */
 .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
 .slot-pill {
-  padding: 11px 6px;
+  padding: 12px 6px;
   text-align: center;
-  border: 2px solid var(--line-2);
+  border: 1px solid var(--line-2);
   border-radius: 0;
   background: var(--bg);
   cursor: pointer;
@@ -775,8 +782,8 @@ input[type="radio"][name="slot"] { display: none; }
   max-width: 620px;
   margin: 0 auto;
   background: var(--surface);
-  padding: 40px;
-  border: 2px solid var(--line);
+  padding: 48px;
+  border: 1px solid var(--line);
   border-radius: 0;
   text-align: left;
 }
@@ -793,10 +800,10 @@ input[type="radio"][name="slot"] { display: none; }
 
 .status-details {
   background: var(--bg);
-  padding: 22px;
+  padding: 26px;
   border-radius: 0;
   margin-top: 14px;
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
 }
 .status-row {
   display: flex;
@@ -825,8 +832,8 @@ input[type="radio"][name="slot"] { display: none; }
   letter-spacing: 0.04em;
   padding: 16px;
   background: var(--surface);
-  border: 2px solid var(--danger-dim);
-  border-left-width: 6px;
+  border: 1px solid var(--danger-dim);
+  border-left-width: 3px;
 }
 .form-error {
   color: var(--danger);
@@ -867,7 +874,7 @@ input[type="radio"][name="slot"] { display: none; }
 /* ==========================================================================
    HOME VIEW
    ========================================================================== */
-.home-intro { max-width: 720px; margin-bottom: 64px; }
+.home-intro { max-width: 720px; margin-bottom: 88px; }
 .home-eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -930,7 +937,7 @@ input[type="radio"][name="slot"] { display: none; }
   background: var(--surface);
   border-radius: 0;
   border: 2px solid var(--fg);
-  box-shadow: 8px 8px 0 var(--sh);
+  box-shadow: 6px 6px 0 var(--sh);
   overflow: hidden;
   flex-direction: column;
   max-height: calc(100vh - 120px);
@@ -949,7 +956,7 @@ input[type="radio"][name="slot"] { display: none; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid var(--fg);
+  border-bottom: 1px solid var(--line);
 }
 .chatbot-title {
   display: flex;
@@ -1018,7 +1025,7 @@ input[type="radio"][name="slot"] { display: none; }
   border-radius: 0;
   font-size: 13px;
   line-height: 1.5;
-  border: 2px solid;
+  border: 1px solid;
 }
 .bot .chat-bubble { background: var(--surface-2); color: var(--text-main); border-color: var(--line); }
 .user .chat-bubble { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 500; }
@@ -1031,7 +1038,7 @@ input[type="radio"][name="slot"] { display: none; }
 }
 .chat-chip {
   background: transparent;
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: 0;
   padding: 7px 10px;
   font-size: 10px;
@@ -1059,14 +1066,14 @@ input[type="radio"][name="slot"] { display: none; }
 .chatbot-input-area {
   padding: 12px;
   background: var(--surface);
-  border-top: 2px solid var(--line);
+  border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
 }
 #chatbot-input {
   flex-grow: 1;
-  border: 2px solid var(--line-2);
-  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  padding: 11px 12px;
   font-size: 13px;
   font-family: var(--font-display);
   outline: none;
@@ -1105,7 +1112,7 @@ input[type="radio"][name="slot"] { display: none; }
   text-transform: uppercase;
   color: var(--text-dim);
   background: var(--bg);
-  border-top: 2px solid var(--line);
+  border-top: 1px solid var(--line);
 }
 .chatbot-footer a { color: var(--signal); text-decoration: none; font-weight: 500; }
 .chatbot-footer a:hover { text-decoration: underline; }
