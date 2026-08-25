@@ -3,12 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#080808" id="meta-theme-color">
+  <script>
+    // Resolve the theme before first paint so the page never flashes the wrong ground.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('ncmc-theme'); } catch (e) { /* private mode */ }
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <title>New Care Med Center | Care That Fits Your Day</title>
   <link rel="icon" href="favicon.jpg" type="image/jpeg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
 
@@ -18,12 +29,22 @@
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
       New Care Med Center
     </div>
-    <nav>
-      <a class="nav-link active" data-target="home">Home</a>
-      <a class="nav-link" data-target="doctors">Find a Doctor</a>
-      <a class="nav-link" data-target="specialties">Specialties & Services</a>
-      <a class="nav-link" data-target="status">Check Status</a>
-    </nav>
+    <div class="header-right">
+      <nav>
+        <a class="nav-link active" data-target="home">Home</a>
+        <a class="nav-link" data-target="doctors">Find a Doctor</a>
+        <a class="nav-link" data-target="specialties">Specialties &amp; Services</a>
+        <a class="nav-link" data-target="status">Check Status</a>
+      </nav>
+
+      <button type="button" id="theme-toggle" class="theme-toggle" role="switch" aria-checked="false" aria-label="Switch between dark and light mode" title="Switch theme">
+        <span class="theme-toggle-track">
+          <span class="theme-toggle-text theme-toggle-text--light" aria-hidden="true">Light</span>
+          <span class="theme-toggle-text theme-toggle-text--dark" aria-hidden="true">Dark</span>
+          <span class="theme-toggle-knob" aria-hidden="true"></span>
+        </span>
+      </button>
+    </div>
   </header>
 
   <!-- Hero -->
@@ -35,42 +56,68 @@
     </div>
   </div>
 
+  <!-- Ledger strip — counts are filled from the API on load -->
+  <div class="hero-stats">
+    <div class="hero-stats-inner">
+      <div class="hero-stat">
+        <span class="hero-stat-value" id="stat-doctors">—</span>
+        <span class="hero-stat-label">Specialists</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value" id="stat-specialties">—</span>
+        <span class="hero-stat-label">Specialties</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value" id="stat-services">—</span>
+        <span class="hero-stat-label">Support Clinics</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value">24/7</span>
+        <span class="hero-stat-label">Emergency Care</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content -->
   <main>
 
     <!-- HOME VIEW -->
     <section id="home" class="view-section active">
-      <div style="text-align: center; max-width: 800px; margin: 20px auto;">
-        <h2 style="font-size: 36px; color: var(--primary); margin-bottom: 20px;">Welcome to New Care Med Center</h2>
-        <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 40px;">Providing world-class healthcare with state-of-the-art facilities and experienced specialists. Your journey to better health starts here.</p>
-        
-        <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 60px;">
-          <button class="btn" style="padding: 15px 30px; font-size: 18px; box-shadow: var(--shadow);" onclick="document.querySelector('[data-target=\'doctors\']').click()">Book an Appointment</button>
-          <button class="btn btn-outline" style="padding: 15px 30px; font-size: 18px;" onclick="document.querySelector('[data-target=\'specialties\']').click()">Explore Specialties</button>
+      <div class="home-intro">
+        <div class="home-eyebrow">New Care Med Center — Est. Bangalore</div>
+        <h2>Welcome to New Care Med Center</h2>
+        <p>Providing world-class healthcare with state-of-the-art facilities and experienced specialists. Your journey to better health starts here.</p>
+
+        <div class="home-actions">
+          <button class="btn" onclick="document.querySelector('[data-target=\'doctors\']').click()">Book an Appointment</button>
+          <button class="btn btn-outline" onclick="document.querySelector('[data-target=\'specialties\']').click()">Explore Specialties</button>
         </div>
-        
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); text-align: left;">
-          <div class="card" style="cursor: default;">
-            <div style="color: var(--primary); margin-bottom: 15px;">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
-            </div>
-            <div class="card-title">Expert Doctors</div>
-            <div class="card-desc">Consult with highly qualified specialists across various medical fields.</div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <div class="card card-static">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
           </div>
-          <div class="card" style="cursor: default;">
-            <div style="color: var(--primary); margin-bottom: 15px;">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" /></svg>
-            </div>
-            <div class="card-title">24/7 Care</div>
-            <div class="card-desc">Round-the-clock emergency services and patient support.</div>
+          <div class="card-subtitle">01 — Specialists</div>
+          <div class="card-title">Expert Doctors</div>
+          <div class="card-desc">Consult with highly qualified specialists across various medical fields.</div>
+        </div>
+        <div class="card card-static">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" /></svg>
           </div>
-          <div class="card" style="cursor: default;">
-            <div style="color: var(--primary); margin-bottom: 15px;">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
-            </div>
-            <div class="card-title">Easy Booking</div>
-            <div class="card-desc">Seamless digital appointment scheduling from the comfort of your home.</div>
+          <div class="card-subtitle">02 — Always Open</div>
+          <div class="card-title">24/7 Care</div>
+          <div class="card-desc">Round-the-clock emergency services and patient support.</div>
+        </div>
+        <div class="card card-static">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 40px; height: 40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
           </div>
+          <div class="card-subtitle">03 — Scheduling</div>
+          <div class="card-title">Easy Booking</div>
+          <div class="card-desc">Seamless digital appointment scheduling from the comfort of your home.</div>
         </div>
       </div>
     </section>
@@ -91,12 +138,12 @@
       <div class="section-header">
         <h2>Medical Specialties</h2>
       </div>
-      <div id="specialties-grid" class="grid" style="margin-bottom: 50px;">
+      <div id="specialties-grid" class="grid" style="margin-bottom: 64px;">
         <div class="loader">Loading specialties...</div>
       </div>
 
       <div class="section-header">
-        <h2>Support Clinics & Services</h2>
+        <h2>Support Clinics &amp; Services</h2>
       </div>
       <div id="services-grid" class="grid">
         <div class="loader">Loading services...</div>
@@ -106,11 +153,13 @@
     <!-- CHECK STATUS VIEW -->
     <section id="status" class="view-section">
       <div class="lookup-card">
-        <h2 style="color: var(--primary); margin-bottom: 15px;">Check & Manage Appointments</h2>
-        <p style="color: var(--text-muted); margin-bottom: 30px;">Enter your Appointment ID or Phone Number to view status or cancel/delete your appointments.</p>
-        
+        <div class="home-eyebrow">Appointment Registry</div>
+        <h2>Check &amp; Manage Appointments</h2>
+        <p style="color: var(--text-muted); margin: 14px 0 32px; font-size: 15px;">Enter your Appointment ID or Phone Number to view status or cancel/delete your appointments.</p>
+
         <form id="lookup-form">
           <div class="form-group">
+            <label>Appointment ID / Phone</label>
             <input type="text" id="lookup-id" class="form-control" required placeholder="e.g. APPT-1001 or 9876543211">
           </div>
           <button type="submit" class="btn" style="width: 100%;">Find Appointments</button>
@@ -128,60 +177,60 @@
   <div class="modal-overlay" id="booking-modal">
     <div class="modal">
       <button class="modal-close" onclick="closeModal()">×</button>
-      
+
       <!-- Booking Form -->
       <div id="booking-step">
         <div class="modal-header">
           <h3 id="modal-doctor-name">Book Appointment</h3>
           <p id="modal-doctor-dept">Department</p>
         </div>
-        
+
         <form id="booking-form">
           <input type="hidden" id="modal-doctor-id" name="doctor_id">
-          
+
           <div class="form-group">
             <label>Patient Name</label>
             <input type="text" name="patient_name" class="form-control" required placeholder="Your full name">
           </div>
-          
+
           <div class="form-group">
             <label>Phone Number</label>
             <input type="tel" name="patient_phone" class="form-control" required placeholder="9876543210">
           </div>
-          
+
           <div class="form-group">
             <label>Select Date</label>
             <input type="date" name="date" id="booking-date" class="form-control" required>
-            <small style="color: var(--text-muted); margin-top: 5px; display: block;" id="available-days-hint"></small>
+            <small class="field-hint" id="available-days-hint"></small>
           </div>
-          
+
           <div class="form-group">
             <label>Available Time Slots</label>
             <div class="slot-grid" id="slot-container">
               <!-- Slots populated here -->
-              <div style="grid-column: 1/-1; color: var(--text-muted); font-size: 14px;">Select a date to see slots.</div>
+              <div class="slot-empty">Select a date to see slots.</div>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Reason for Visit (Optional)</label>
             <textarea name="reason" class="form-control" placeholder="Briefly describe your symptoms..." style="resize: none;"></textarea>
           </div>
-          
-          <button type="submit" class="btn" id="btn-submit" style="width: 100%; padding: 14px; font-size: 16px;">Confirm Booking</button>
-          <div id="booking-error" style="color: #b43e32; margin-top: 15px; text-align: center; font-size: 14px;"></div>
+
+          <button type="submit" class="btn" id="btn-submit" style="width: 100%; padding: 15px;">Confirm Booking</button>
+          <div id="booking-error" class="form-error"></div>
         </form>
       </div>
 
       <!-- Success Step -->
       <div id="success-step" class="success-screen" style="display: none;">
         <div class="success-icon">✓</div>
-        <h3 style="color: var(--primary-dark); font-size: 24px;">Booking Successful!</h3>
-        <p style="color: var(--text-muted); margin-top: 10px;">Your appointment has been registered.</p>
-        
+        <h3>Booking Successful</h3>
+        <p style="color: var(--text-muted); margin-top: 10px; font-size: 14px;">Your appointment has been registered.</p>
+
         <div class="appt-id" id="success-id">APPT-XXXX</div>
-        
-        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Please keep this ID handy for checking your status.</p>
+
+        <p class="field-hint" style="margin-bottom: 28px;">Keep this ID handy for checking your status.</p>
         <button type="button" class="btn" onclick="closeModal()" style="width: 100%;">Done</button>
       </div>
     </div>
@@ -194,7 +243,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
       </svg>
     </button>
-    
+
     <div id="chatbot-window" class="chatbot-window">
       <div class="chatbot-header">
         <div class="chatbot-title">
@@ -203,12 +252,12 @@
           </div>
           <div>
             <div>New Care Assistant</div>
-            <small style="font-size: 11px; opacity: 0.85; font-weight: normal;">Online • Ready to help</small>
+            <small class="chatbot-status">Online • Ready to help</small>
           </div>
         </div>
         <button id="chatbot-close" class="chatbot-close" title="Close Chat">×</button>
       </div>
-      
+
       <div id="chatbot-messages" class="chatbot-messages">
         <div class="chat-message bot">
           <div class="chat-bubble">Hi! 👋 Welcome to New Care Med Center. How can I assist you today?</div>
@@ -221,7 +270,7 @@
           <button type="button" class="chat-chip" data-query="What support services are available?">🏥 Support Services</button>
         </div>
       </div>
-      
+
       <div class="chatbot-input-area">
         <form id="chatbot-form" style="display:flex; width: 100%;">
           <input type="text" id="chatbot-input" placeholder="Type a message..." required autocomplete="off">
@@ -230,13 +279,13 @@
           </button>
         </form>
       </div>
-      
+
       <div class="chatbot-footer">
-        Powered by <a href="https://perfox.ai/" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none; font-weight: bold;">Perfox.ai</a>
+        Powered by <a href="https://perfox.ai/" target="_blank" rel="noopener noreferrer">Perfox.ai</a>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=16" defer></script>
 </body>
 </html>
