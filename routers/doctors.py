@@ -38,7 +38,7 @@ def list_doctors(
     If a department is provided, only doctors whose department
     contains that text (case-insensitive) are returned.
     """
-    doctors = get_all_doctors(department=department)
+    doctors = get_all_doctors(search_query=department)
     return {"success": True, "count": len(doctors), "data": doctors}
 
 
