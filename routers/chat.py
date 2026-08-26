@@ -9,43 +9,52 @@ Endpoint:
 
 # pyrefly: ignore [missing-import]
 from fastapi import APIRouter
-
 from models import ChatRequest, ChatResponse  # type: ignore # pyrefly: ignore [missing-import]
 
-router = APIRouter(prefix="/chat", tags=["Chat"])
+# Import the compiled LangGraph agent we just built!
+import sys
+from pathlib import Path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
+from agent.graph import graph
+
+router = APIRouter(prefix="/chat", tags=["Chat"])
 
 @router.post(
     "",
     response_model=ChatResponse,
     summary="Send chat message",
-    description=(
-        "Send a message to the hospital assistant / chatbot. "
-        "Processes inquiries about doctors, appointments, services, and hospital information."
-    ),
+    description="Send a message to Aria, the hospital AI assistant.",
 )
 def chat_endpoint(request: ChatRequest):
     """
-    Process incoming chat inquiry and return response.
+    Process incoming chat inquiry using the LangGraph AI agent.
     """
-    msg_lower = request.message.strip().lower()
-    
-    if any(w in msg_lower for w in ["book", "appointment", "schedule"]):
-        reply = "You can easily book an appointment by clicking 'Find a Doctor' in the menu, choosing your specialist, and selecting an available time slot!"
-    elif any(w in msg_lower for w in ["status", "check", "cancel", "delete"]):
-        reply = "To check or manage an existing appointment, head to the 'Check Status' tab and enter your Appointment ID (e.g. APPT-1001) or phone number."
-    elif any(w in msg_lower for w in ["doctor", "specialist", "cardiologist", "neurologist", "pediatric"]):
-        reply = "We have top specialists in Cardiology, Orthopedics, Neurology, and Pediatrics. Head over to 'Find a Doctor' to view schedules and qualifications!"
-    elif any(w in msg_lower for w in ["hour", "time", "timing", "open", "emergency"]):
-        reply = "New Care Med Center provides 24/7 emergency care and round-the-clock patient support. Doctor consultation timings vary by specialist."
-    elif any(w in msg_lower for w in ["service", "clinic", "specialt"]):
-        reply = "You can browse all hospital departments and specialized support clinics under the 'Specialties & Services' section."
-    else:
-        reply = "Thank you for reaching out to New Care Med Center! We're here to assist you with appointments, doctors, and hospital services."
-
-    return ChatResponse(
-        success=True,
-        reply=reply,
-        session_id=request.session_id,
-    )
+    try:
+        # Pass the frontend's session_id to LangGraph's MemorySaver
+        # This ensures each user has their own isolated conversation history!
+        config = {"configurable": {"thread_id": request.session_id or "default-session"}}
+        
+        # Invoke the LangGraph agent
+        response = graph.invoke(
+            {"messages": [{"role": "user", "content": request.message}]},
+            config=config,
+        )
+        
+        # The last message is Aria's final answer
+        ai_reply = response["messages"][-1].content
+        
+        return ChatResponse(
+            success=True,
+            reply=ai_reply,
+            session_id=request.session_id,
+        )
+    except Exception as e:
+        return ChatResponse(
+            success=False,
+            reply=f"Error connecting to Aria: {str(e)}",
+            session_id=request.session_id,
+        )
 

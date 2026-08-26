@@ -411,7 +411,108 @@ function removeTypingIndicator(elem) {
 function appendMessage(text, sender) {
   const msgDiv = document.createElement('div');
   msgDiv.className = `chat-message ${sender}`;
-  msgDiv.innerHTML = `<div class="chat-bubble">${text}</div>`;
+  
+  let rawText = text;
+  let customUI = '';
+  
+  if (sender === 'bot') {
+    // 1. Detect and parse [UI: DAYS(...)]
+    const daysMatch = rawText.match(/\[UI:\s*DAYS\(([^)]+)\)\]/i);
+    if (daysMatch) {
+      rawText = rawText.replace(daysMatch[0], '');
+      const daysList = daysMatch[1].split(',').map(s => s.trim());
+      
+      const daysMap = { 'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6, 'sun': 0 };
+      const today = new Date();
+      
+      const buttonsHtml = daysList.map(dayStr => {
+        const dayKey = dayStr.toLowerCase().substring(0, 3);
+        const targetDay = daysMap[dayKey];
+        if (targetDay !== undefined) {
+          let daysUntil = targetDay - today.getDay();
+          // If it's earlier in the week or today, assume next available week slot to be safe, 
+          // or just standard logic: if it's < 0, add 7
+          if (daysUntil < 0) daysUntil += 7;
+          
+          const targetDate = new Date(today);
+          targetDate.setDate(today.getDate() + daysUntil);
+          
+          // Submit value format: YYYY-MM-DD
+          const yyyy = targetDate.getFullYear();
+          const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+          const dd = String(targetDate.getDate()).padStart(2, '0');
+          const value = `${yyyy}-${mm}-${dd}`;
+          
+          // Display format: Wed, Aug 26
+          const display = targetDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          
+          return `<button class="chat-slot-btn" onclick="handleInteractiveSubmit(this, 'slot', '${value}')">${display}</button>`;
+        }
+        return '';
+      }).join('');
+      
+      if (buttonsHtml) {
+        customUI += `
+          <div class="interactive-ui slot-btn-container">
+            ${buttonsHtml}
+          </div>
+        `;
+      }
+    }
+    
+    // 2. Detect and parse [UI: SLOTS(...)]
+    const slotsMatch = rawText.match(/\[UI:\s*SLOTS\(([^)]+)\)\]/i);
+    if (slotsMatch) {
+      rawText = rawText.replace(slotsMatch[0], '');
+      const slots = slotsMatch[1].split(',').map(s => s.trim());
+      const buttonsHtml = slots.map(slot => 
+        `<button class="chat-slot-btn" onclick="handleInteractiveSubmit(this, 'slot', '${slot}')">${slot}</button>`
+      ).join('');
+      
+      customUI += `
+        <div class="interactive-ui slot-btn-container">
+          ${buttonsHtml}
+        </div>
+      `;
+    }
+
+    // 3. Detect and parse [UI: CONFIRM_CANCEL(...)]
+    const cancelMatch = rawText.match(/\[UI:\s*CONFIRM_CANCEL\(([^)]+)\)\]/i);
+    if (cancelMatch) {
+      rawText = rawText.replace(cancelMatch[0], '');
+      const apptId = cancelMatch[1].trim();
+      
+      customUI += `
+        <div class="interactive-ui slot-btn-container">
+          <button class="chat-slot-btn danger-btn" onclick="handleInteractiveSubmit(this, 'slot', 'Yes, please cancel appointment ${apptId}')">Yes, Cancel Appointment</button>
+          <button class="chat-slot-btn" onclick="handleInteractiveSubmit(this, 'slot', 'No, I changed my mind, keep the appointment')">No, Keep it</button>
+        </div>
+      `;
+    }
+  }
+
+  // Parse Markdown for the bot's replies so tables, bolding, and lists render properly!
+  const content = (sender === 'bot' && typeof marked !== 'undefined') ? marked.parse(rawText) : rawText;
+  
+  msgDiv.innerHTML = `<div class="chat-bubble ${sender === 'bot' ? 'markdown-body' : ''}">${content}${customUI}</div>`;
   chatMessages.appendChild(msgDiv);
+}
+
+window.handleInteractiveSubmit = function(element, type, value) {
+  // Disable the parent container so it can't be clicked/changed twice
+  const container = element.closest('.interactive-ui');
+  if(container) {
+    container.style.opacity = '0.6';
+    container.style.pointerEvents = 'none';
+  }
+  
+  let submitValue = value;
+  if(type === 'date') {
+    submitValue = element.value;
+  }
+  
+  if(submitValue) {
+    handleSendMessage(submitValue);
+  }
 }
 

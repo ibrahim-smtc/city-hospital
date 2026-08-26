@@ -55,9 +55,9 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
 #  DOCTORS
 # ===========================================================================
 
-def get_all_doctors(department: str = None) -> list[dict]:
+def get_all_doctors(search_query: str = None) -> list[dict]:
     """
-    Fetch all doctors, optionally filtered by department.
+    Fetch all doctors, optionally filtered by search_query (matches name, department, or designation).
 
     Each doctor dict includes: id, slug, name, designation, department,
     description, experience_years, available_days, available_slots.
@@ -82,11 +82,27 @@ def get_all_doctors(department: str = None) -> list[dict]:
     """
     params = []
 
-    # If a department filter is provided, add a WHERE clause
-    # Using LIKE for partial matching (e.g. "Cardiology" matches "Interventional Cardiologist")
-    if department:
-        query += " WHERE d.department LIKE ?"
-        params.append(f"%{department}%")
+    # If a search query is provided, do a flexible word-by-word match
+    if search_query:
+        query_clean = search_query.strip()
+        words = [w for w in query_clean.split() if len(w) > 2]
+        if not words:
+            words = [query_clean]
+
+        where_clauses = []
+        for word in words:
+            stem = word
+            # Extract root stem for robust matching (e.g., 'Cardiology'/'Cardiologist' -> 'Cardio')
+            for suffix in ["ology", "ologist", "iatrics", "iatrician", "iatry", "iatrist", "ics", "ic", "urgery", "urgeon"]:
+                if word.lower().endswith(suffix) and len(word) > len(suffix) + 3:
+                    stem = word[:-len(suffix)]
+                    break
+
+            where_clauses.append("(d.department LIKE ? OR d.designation LIKE ? OR d.name LIKE ? OR d.department LIKE ? OR d.designation LIKE ?)")
+            # Extend params for the 5 placeholders
+            params.extend([f"%{word}%", f"%{word}%", f"%{word}%", f"%{stem}%", f"%{stem}%"])
+
+        query += " WHERE " + " AND ".join(where_clauses)
 
     query += " ORDER BY d.id"
 
