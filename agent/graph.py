@@ -29,6 +29,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
 
 from agent.state import MessagesState
 from agent.tools import tools
@@ -103,11 +104,16 @@ workflow.add_edge("tools", "chatbot")
 # SqliteSaver stores conversation history in a real SQLite database file.
 # This means chat history survives Python process restarts and server redeploys.
 # On Railway, mount a Persistent Volume at /app/data/ to survive between deploys.
+#
+# IMPORTANT: We open the connection directly with check_same_thread=False because
+# FastAPI runs in a multi-threaded environment. from_conn_string() returns a
+# context manager and cannot be used directly as a checkpointer.
 
 DB_DIR = ROOT_DIR / "data"
 DB_DIR.mkdir(exist_ok=True)  # Create the data/ directory if it doesn't exist
 
-memory = SqliteSaver.from_conn_string(str(DB_DIR / "langgraph_memory.db"))
+_conn = sqlite3.connect(str(DB_DIR / "langgraph_memory.db"), check_same_thread=False)
+memory = SqliteSaver(_conn)
 graph = workflow.compile(checkpointer=memory)
 
 
