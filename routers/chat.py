@@ -33,7 +33,7 @@ def chat_endpoint(request: ChatRequest):
     Process incoming chat inquiry using the LangGraph AI agent.
     """
     try:
-        # Pass the frontend's session_id to LangGraph's MemorySaver
+        # Pass the frontend's session_id to LangGraph's SqliteSaver
         # This ensures each user has their own isolated conversation history!
         config = {"configurable": {"thread_id": request.session_id or "default-session"}}
         
@@ -58,3 +58,29 @@ def chat_endpoint(request: ChatRequest):
             session_id=request.session_id,
         )
 
+
+@router.get(
+    "/history",
+    summary="Get chat history",
+    description="Retrieve the full conversation history for a given session ID.",
+)
+def chat_history(session_id: str):
+    """
+    Returns the full conversation history from LangGraph's SQLite memory
+    for a given session_id so the frontend can re-populate the chat on page load.
+    """
+    try:
+        config = {"configurable": {"thread_id": session_id}}
+        state = graph.get_state(config)
+        
+        messages = []
+        if state and state.values.get("messages"):
+            for msg in state.values["messages"]:
+                role = "bot" if msg.type in ("ai", "assistant") else "user"
+                # Only include non-empty text messages (skip tool calls, etc.)
+                if hasattr(msg, "content") and isinstance(msg.content, str) and msg.content.strip():
+                    messages.append({"role": role, "content": msg.content})
+        
+        return {"success": True, "messages": messages}
+    except Exception as e:
+        return {"success": False, "messages": [], "error": str(e)}

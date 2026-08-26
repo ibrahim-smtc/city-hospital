@@ -6,6 +6,13 @@ let state = {
   currentDoctor: null
 };
 
+// Persist the session ID in localStorage so users keep their chat history on refresh
+let sessionId = localStorage.getItem('chatSessionId');
+if (!sessionId) {
+  sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+  localStorage.setItem('chatSessionId', sessionId);
+}
+
 // --- Navigation Tabs & Routing ---
 document.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', (e) => {
@@ -328,8 +335,29 @@ chatToggle.addEventListener('click', () => {
   chatWindow.classList.toggle('active');
   if (chatWindow.classList.contains('active')) {
     chatInput.focus();
+    // Restore history the first time the user opens the chat on this page load
+    if (!chatWindow.dataset.historyLoaded) {
+      chatWindow.dataset.historyLoaded = 'true';
+      restoreChatHistory();
+    }
   }
 });
+
+async function restoreChatHistory() {
+  try {
+    const res = await fetch(`/chat/history?session_id=${sessionId}`);
+    const data = await res.json();
+    if (data.success && data.messages && data.messages.length > 0) {
+      // Clear the default welcome message if history exists
+      chatMessages.innerHTML = '';
+      data.messages.forEach(msg => {
+        appendMessage(msg.content, msg.role);
+      });
+    }
+  } catch (err) {
+    console.error('Could not restore chat history:', err);
+  }
+}
 
 chatClose.addEventListener('click', () => {
   chatWindow.classList.remove('active');
@@ -367,7 +395,7 @@ async function handleSendMessage(text) {
     const res = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ message: text, session_id: sessionId })
     });
     const data = await res.json();
     

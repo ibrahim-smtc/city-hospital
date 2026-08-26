@@ -3,9 +3,9 @@ LangGraph State Machine for the City Hospital AI Agent.
 
 Wires together:
   - MessagesState: the shared state schema
-  - LLM with tool binding (ChatGroq / LLaMA-3.3-70b)
+  - LLM with tool binding (DeepSeek via ChatOpenAI)
   - ToolNode: auto-executes any tool the LLM calls
-  - MemorySaver: in-memory conversation persistence per session
+  - SqliteSaver: persistent SQLite-backed conversation memory per session
   - Conditional routing: LLM -> tools -> LLM -> ... -> END
 
 The compiled `graph` object is imported by routers/chat.py to handle
@@ -28,7 +28,7 @@ from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 from agent.state import MessagesState
 from agent.tools import tools
@@ -99,10 +99,15 @@ workflow.add_conditional_edges("chatbot", tools_condition)
 # After tools finish executing → always return to chatbot to generate the final answer
 workflow.add_edge("tools", "chatbot")
 
-# ─── Compile with Memory ───────────────────────────────────────────────────────
-# MemorySaver stores conversation history in RAM per thread_id.
-# Each user session gets its own thread_id so conversations don't mix.
-memory = MemorySaver()
+# ─── Compile with SQLite Persistence ──────────────────────────────────────────
+# SqliteSaver stores conversation history in a real SQLite database file.
+# This means chat history survives Python process restarts and server redeploys.
+# On Railway, mount a Persistent Volume at /app/data/ to survive between deploys.
+
+DB_DIR = ROOT_DIR / "data"
+DB_DIR.mkdir(exist_ok=True)  # Create the data/ directory if it doesn't exist
+
+memory = SqliteSaver.from_conn_string(str(DB_DIR / "langgraph_memory.db"))
 graph = workflow.compile(checkpointer=memory)
 
 
