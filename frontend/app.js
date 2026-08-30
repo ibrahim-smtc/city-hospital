@@ -48,8 +48,9 @@ let state = {
 // --- Navigation Tabs & Routing ---
 document.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', (e) => {
+    e.preventDefault();
     // Update the URL hash instead of switching tabs directly
-    window.location.hash = e.target.dataset.target;
+    window.location.hash = e.currentTarget.dataset.target;
   });
 });
 
