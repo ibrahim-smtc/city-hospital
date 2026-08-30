@@ -86,10 +86,10 @@ mcp = FastApiMCP(
     app,
     name="Hospital MCP Server",
     description=(
-        "Tools for browsing doctors, hospital specialties, and support services, "
-        "and for booking, checking, listing, and cancelling appointments."
+        "Tools for looking up doctors and their availability, and for booking, "
+        "checking, listing, and cancelling appointments."
     ),
-    exclude_tags=["Chat"],
+    exclude_tags=["Chat", "Specialties", "Services"],
     auth_config=AuthConfig(dependencies=[Depends(_verify_mcp_token)]),
 )
 mcp.mount_http(mount_path="/mcp")
