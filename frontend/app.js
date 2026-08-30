@@ -64,6 +64,12 @@ function switchTab(tabId) {
   const activeSection = document.getElementById(tabId);
   if (activeSection) activeSection.classList.add('active');
   
+  // 2.5 Hide the hero image for non-home tabs
+  const heroEl = document.querySelector('.hero');
+  const heroStatsEl = document.querySelector('.hero-stats');
+  if (heroEl) heroEl.style.display = (tabId === 'home') ? '' : 'none';
+  if (heroStatsEl) heroStatsEl.style.display = (tabId === 'home') ? '' : 'none';
+  
   // 3. Scroll to top when switching pages
   window.scrollTo(0, 0);
 }
