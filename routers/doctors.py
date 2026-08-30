@@ -23,7 +23,9 @@ router = APIRouter(prefix="/doctors", tags=["Doctors"])
     summary="List doctors",
     description=(
         "Return all doctors from the hospital database. "
-        "Use the optional `department` filter to narrow down by specialty area."
+        "Use the optional `department` filter to narrow down by specialty area. "
+        "The calling application already renders this list as a table for the "
+        "user — reply with a short conversational summary, not a repeated table."
     ),
 )
 def list_doctors(

@@ -105,7 +105,9 @@ def book_appointment(payload: AppointmentCreateRequest):
     summary="List appointments",
     description=(
         "Return appointments, optionally filtered by patient phone number "
-        "or appointment ID. Returns date, time slot, status, and doctor info."
+        "or appointment ID. Returns date, time slot, status, and doctor info. "
+        "The calling application already renders this list as a table for the "
+        "user — reply with a short conversational summary, not a repeated table."
     ),
 )
 def list_all_appointments(
