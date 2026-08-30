@@ -50,7 +50,9 @@ def list_doctors(
     summary="Get one doctor",
     description=(
         "Return full details for a specific doctor by ID, including "
-        "available days, time slots, qualifications, expertise, and more."
+        "available days, time slots, qualifications, expertise, and more. "
+        "The calling application already renders this as a details card for "
+        "the user — reply with a short conversational summary, not a repeated list."
     ),
     responses={404: {"description": "Doctor ID was not found."}},
 )

@@ -42,7 +42,10 @@ router = APIRouter(prefix="/appointments", tags=["Appointments"])
         "1. Check that the doctor exists\n"
         "2. Validate the time slot is in the doctor's available slots\n"
         "3. Prevent double-booking (same doctor + date + slot)\n"
-        "4. Return a unique appointment ID (e.g. APPT-1001)"
+        "4. Return a unique appointment ID (e.g. APPT-1001)\n\n"
+        "The calling application already renders the confirmed booking as a "
+        "details card for the user — reply with a short conversational "
+        "confirmation, not a repeated list."
     ),
     responses={
         404: {"description": "Doctor ID was not found."},
@@ -136,7 +139,9 @@ def list_all_appointments(
     summary="Check an appointment",
     description=(
         "Return the booking details and current status for a specific appointment. "
-        "Includes doctor name, date, time slot, and patient info."
+        "Includes doctor name, date, time slot, and patient info. "
+        "The calling application already renders this as a details card for "
+        "the user — reply with a short conversational summary, not a repeated list."
     ),
     responses={404: {"description": "Appointment ID was not found."}},
 )
@@ -159,7 +164,10 @@ def check_appointment(appointment_id: str):
     summary="Delete an appointment",
     description=(
         "Delete an existing appointment by its unique ID (e.g. APPT-1001). "
-        "Frees up the doctor's time slot for future bookings."
+        "Frees up the doctor's time slot for future bookings. "
+        "The calling application already renders the cancelled appointment as "
+        "a details card for the user — reply with a short conversational "
+        "confirmation, not a repeated list."
     ),
     responses={
         404: {"description": "Appointment ID was not found."},
