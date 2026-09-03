@@ -12,7 +12,7 @@ Endpoints:
 from fastapi import APIRouter, HTTPException, Query
 
 from models import DoctorDetailResponse, DoctorListResponse  # type: ignore # pyrefly: ignore [missing-import]
-from store import get_all_doctors, get_doctor_by_id  # type: ignore # pyrefly: ignore [missing-import]
+from db.store import get_all_doctors, get_doctor_by_id  # type: ignore # pyrefly: ignore [missing-import]
 
 router = APIRouter(prefix="/doctors", tags=["Doctors"])
 

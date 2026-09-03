@@ -3,7 +3,9 @@ store.py
 --------
 Data access layer for the Hospital Demo API.
 
-All data lives in a single SQLite database (data/hospital.db).
+All data lives in a PostgreSQL database (Supabase), connection details
+are read from DATABASE_URL in the .env file.
+
 Each function opens a short-lived connection, runs the query,
 and returns plain Python dicts — no ORM, no magic.
 
@@ -20,34 +22,45 @@ Functions:
     create_appointment(data)           -> new appointment dict
     get_appointment_by_id(appt_id)     -> single appointment dict or None
     list_appointments(phone, appt_id)  -> list of appointment dicts
+    delete_appointment(appt_id)        -> deleted appointment dict or None
 """
 
 import json
-import sqlite3
+import os
 from datetime import datetime, timezone
-from pathlib import Path
 
-# Path to the SQLite database
-DB_PATH = Path(__file__).parent / "data" / "hospital.db"
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
+
+# Load DATABASE_URL from .env (no-op if already set in the environment)
+load_dotenv()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set. Add it to your .env file.")
 
 
 # ===========================================================================
 #  DATABASE CONNECTION HELPER
 # ===========================================================================
 
-def _get_connection() -> sqlite3.Connection:
+def _get_connection() -> psycopg2.extensions.connection:
     """
-    Create a new SQLite connection with row_factory set to sqlite3.Row
-    so we can access columns by name (like a dict).
+    Create a new psycopg2 connection to the PostgreSQL database.
+    Rows are returned as RealDictRow objects (behave like dicts),
+    matching the sqlite3.Row behaviour the rest of the code relies on.
     """
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row  # lets us do row["column_name"]
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    return psycopg2.connect(DATABASE_URL)
 
 
-def _row_to_dict(row: sqlite3.Row) -> dict:
-    """Convert a sqlite3.Row to a plain Python dict."""
+def _cursor(conn):
+    """Return a RealDictCursor so rows come back as dict-like objects."""
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def _row_to_dict(row) -> dict:
+    """Convert a RealDictRow (or any mapping) to a plain Python dict."""
     return dict(row)
 
 
@@ -63,6 +76,7 @@ def get_all_doctors(department: str = None) -> list[dict]:
     description, experience_years, available_days, available_slots.
     """
     conn = _get_connection()
+    cur = _cursor(conn)
 
     # Base query: join doctors with their availability
     query = """
@@ -82,15 +96,17 @@ def get_all_doctors(department: str = None) -> list[dict]:
     """
     params = []
 
-    # If a department filter is provided, add a WHERE clause
-    # Using LIKE for partial matching (e.g. "Cardiology" matches "Interventional Cardiologist")
+    # If a department filter is provided, add a WHERE clause.
+    # Using ILIKE for case-insensitive partial matching.
     if department:
-        query += " WHERE d.department LIKE ?"
+        query += " WHERE d.department ILIKE %s"
         params.append(f"%{department}%")
 
     query += " ORDER BY d.id"
 
-    rows = conn.execute(query, params).fetchall()
+    cur.execute(query, params)
+    rows = cur.fetchall()
+
     doctors = []
     for row in rows:
         doc = _row_to_dict(row)
@@ -99,6 +115,7 @@ def get_all_doctors(department: str = None) -> list[dict]:
         doc["available_slots"] = json.loads(doc["available_slots"]) if doc["available_slots"] else []
         doctors.append(doc)
 
+    cur.close()
     conn.close()
     return doctors
 
@@ -113,9 +130,10 @@ def get_doctor_by_id(doctor_id: int) -> dict | None:
     Returns None if the doctor is not found.
     """
     conn = _get_connection()
+    cur = _cursor(conn)
 
     # --- Get the main doctor row ---
-    row = conn.execute(
+    cur.execute(
         """
         SELECT
             d.id, d.slug, d.name, d.designation, d.department,
@@ -123,12 +141,14 @@ def get_doctor_by_id(doctor_id: int) -> dict | None:
             da.available_days, da.available_slots
         FROM doctors d
         LEFT JOIN doctor_availability da ON da.doctor_id = d.id
-        WHERE d.id = ?
+        WHERE d.id = %s
         """,
         (doctor_id,),
-    ).fetchone()
+    )
+    row = cur.fetchone()
 
     if not row:
+        cur.close()
         conn.close()
         return None
 
@@ -139,11 +159,11 @@ def get_doctor_by_id(doctor_id: int) -> dict | None:
     # --- Fetch related lists ---
     # Helper: run a simple SELECT and return a flat list of values
     def _fetch_list(table: str, column: str) -> list[str]:
-        rows = conn.execute(
-            f"SELECT {column} FROM {table} WHERE doctor_id = ?",
+        cur.execute(
+            f"SELECT {column} FROM {table} WHERE doctor_id = %s",
             (doctor_id,),
-        ).fetchall()
-        return [r[0] for r in rows]
+        )
+        return [r[column] for r in cur.fetchall()]
 
     doctor["qualifications"] = _fetch_list("doctor_qualifications", "qualification")
     doctor["expertise"] = _fetch_list("doctor_expertise", "area")
@@ -151,6 +171,7 @@ def get_doctor_by_id(doctor_id: int) -> dict | None:
     doctor["achievements"] = _fetch_list("doctor_achievements", "achievement")
     doctor["publications"] = _fetch_list("doctor_publications", "publication")
 
+    cur.close()
     conn.close()
     return doctor
 
@@ -165,9 +186,10 @@ def get_all_specialties() -> list[dict]:
     Returns: list of dicts with id, slug, name, description.
     """
     conn = _get_connection()
-    rows = conn.execute(
-        "SELECT id, slug, name, description FROM specialties ORDER BY name"
-    ).fetchall()
+    cur = _cursor(conn)
+    cur.execute("SELECT id, slug, name, description FROM specialties ORDER BY name")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return [_row_to_dict(r) for r in rows]
 
@@ -182,9 +204,10 @@ def get_all_services() -> list[dict]:
     Returns: list of dicts with id, slug, name, type, description.
     """
     conn = _get_connection()
-    rows = conn.execute(
-        "SELECT id, slug, name, type, description FROM services ORDER BY name"
-    ).fetchall()
+    cur = _cursor(conn)
+    cur.execute("SELECT id, slug, name, type, description FROM services ORDER BY name")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return [_row_to_dict(r) for r in rows]
 
@@ -193,14 +216,15 @@ def get_all_services() -> list[dict]:
 #  APPOINTMENTS
 # ===========================================================================
 
-def _generate_appointment_id(conn: sqlite3.Connection) -> str:
+def _generate_appointment_id(cur) -> str:
     """
     Generate the next appointment ID in the format APPT-1001, APPT-1002, etc.
-    Looks at the highest existing ID to determine the next number.
+    Looks at the highest existing numeric suffix to determine the next number.
     """
-    row = conn.execute(
-        "SELECT id FROM appointments ORDER BY ROWID DESC LIMIT 1"
-    ).fetchone()
+    cur.execute(
+        "SELECT id FROM appointments ORDER BY created_at DESC, id DESC LIMIT 1"
+    )
+    row = cur.fetchone()
 
     if row is None:
         # No appointments yet, start at 1001
@@ -235,78 +259,83 @@ def create_appointment(data: dict) -> dict:
         ValueError: with a descriptive message if validation fails
     """
     conn = _get_connection()
+    cur = _cursor(conn)
 
-    # Step 1: Check doctor exists
-    doctor = conn.execute(
-        "SELECT d.id, d.name FROM doctors d WHERE d.id = ?",
-        (data["doctor_id"],),
-    ).fetchone()
+    try:
+        # Step 1: Check doctor exists
+        cur.execute(
+            "SELECT d.id, d.name FROM doctors d WHERE d.id = %s",
+            (data["doctor_id"],),
+        )
+        doctor = cur.fetchone()
 
-    if not doctor:
+        if not doctor:
+            raise ValueError("DOCTOR_NOT_FOUND")
+
+        # Step 2: Validate the time slot
+        cur.execute(
+            "SELECT available_slots FROM doctor_availability WHERE doctor_id = %s",
+            (data["doctor_id"],),
+        )
+        avail = cur.fetchone()
+
+        if avail:
+            available_slots = json.loads(avail["available_slots"])
+            if data["slot"] not in available_slots:
+                raise ValueError(f"INVALID_SLOT|{json.dumps(available_slots)}")
+
+        # Step 3: Check for double-booking
+        cur.execute(
+            """
+            SELECT id FROM appointments
+            WHERE doctor_id = %s
+              AND date = %s
+              AND slot = %s
+              AND status != 'cancelled'
+            """,
+            (data["doctor_id"], data["date"], data["slot"]),
+        )
+        if cur.fetchone():
+            raise ValueError("SLOT_ALREADY_BOOKED")
+
+        # Step 4: Insert the appointment
+        appt_id = _generate_appointment_id(cur)
+        created_at = datetime.now(timezone.utc).isoformat()
+
+        cur.execute(
+            """
+            INSERT INTO appointments
+                (id, patient_name, patient_phone, doctor_id, date, slot, status, reason, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, 'pending', %s, %s)
+            """,
+            (
+                appt_id,
+                data["patient_name"],
+                data["patient_phone"],
+                data["doctor_id"],
+                data["date"],
+                data["slot"],
+                data.get("reason", ""),
+                created_at,
+            ),
+        )
+        conn.commit()
+
+        # Fetch the newly created appointment to return it
+        cur.execute("SELECT * FROM appointments WHERE id = %s", (appt_id,))
+        appointment = _row_to_dict(cur.fetchone())
+
+        # Add doctor name for convenience
+        appointment["doctor_name"] = doctor["name"]
+
+        return appointment
+
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
         conn.close()
-        raise ValueError("DOCTOR_NOT_FOUND")
-
-    # Step 2: Validate the time slot
-    avail = conn.execute(
-        "SELECT available_slots FROM doctor_availability WHERE doctor_id = ?",
-        (data["doctor_id"],),
-    ).fetchone()
-
-    if avail:
-        available_slots = json.loads(avail["available_slots"])
-        if data["slot"] not in available_slots:
-            conn.close()
-            raise ValueError(f"INVALID_SLOT|{json.dumps(available_slots)}")
-
-    # Step 3: Check for double-booking
-    conflict = conn.execute(
-        """
-        SELECT id FROM appointments
-        WHERE doctor_id = ?
-          AND date = ?
-          AND slot = ?
-          AND status != 'cancelled'
-        """,
-        (data["doctor_id"], data["date"], data["slot"]),
-    ).fetchone()
-
-    if conflict:
-        conn.close()
-        raise ValueError("SLOT_ALREADY_BOOKED")
-
-    # Step 4: Insert the appointment
-    appt_id = _generate_appointment_id(conn)
-    created_at = datetime.now(timezone.utc).isoformat()
-
-    conn.execute(
-        """
-        INSERT INTO appointments
-            (id, patient_name, patient_phone, doctor_id, date, slot, status, reason, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-        """,
-        (
-            appt_id,
-            data["patient_name"],
-            data["patient_phone"],
-            data["doctor_id"],
-            data["date"],
-            data["slot"],
-            data.get("reason", ""),
-            created_at,
-        ),
-    )
-    conn.commit()
-
-    # Fetch the newly created appointment to return it
-    appointment = _row_to_dict(conn.execute(
-        "SELECT * FROM appointments WHERE id = ?", (appt_id,)
-    ).fetchone())
-
-    # Add doctor name for convenience
-    appointment["doctor_name"] = doctor["name"]
-
-    conn.close()
-    return appointment
 
 
 def get_appointment_by_id(appointment_id: str) -> dict | None:
@@ -316,7 +345,8 @@ def get_appointment_by_id(appointment_id: str) -> dict | None:
     Returns None if not found.
     """
     conn = _get_connection()
-    row = conn.execute(
+    cur = _cursor(conn)
+    cur.execute(
         """
         SELECT
             a.*,
@@ -324,10 +354,12 @@ def get_appointment_by_id(appointment_id: str) -> dict | None:
             d.department
         FROM appointments a
         JOIN doctors d ON d.id = a.doctor_id
-        WHERE a.id = ?
+        WHERE a.id = %s
         """,
         (appointment_id,),
-    ).fetchone()
+    )
+    row = cur.fetchone()
+    cur.close()
     conn.close()
 
     if not row:
@@ -349,6 +381,7 @@ def list_appointments(
     Returns a list of appointment dicts, each including doctor_name.
     """
     conn = _get_connection()
+    cur = _cursor(conn)
 
     query = """
         SELECT
@@ -362,16 +395,18 @@ def list_appointments(
     params = []
 
     if phone:
-        query += " AND a.patient_phone = ?"
+        query += " AND a.patient_phone = %s"
         params.append(phone)
 
     if appointment_id:
-        query += " AND a.id = ?"
+        query += " AND a.id = %s"
         params.append(appointment_id)
 
     query += " ORDER BY a.created_at DESC"
 
-    rows = conn.execute(query, params).fetchall()
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
 
     return [_row_to_dict(r) for r in rows]
@@ -389,31 +424,38 @@ def delete_appointment(appointment_id: str) -> dict | None:
     Returns None if the appointment doesn't exist.
     """
     conn = _get_connection()
+    cur = _cursor(conn)
 
-    # Fetch the appointment first so we can return its details
-    row = conn.execute(
-        """
-        SELECT
-            a.*,
-            d.name AS doctor_name,
-            d.department
-        FROM appointments a
-        JOIN doctors d ON d.id = a.doctor_id
-        WHERE a.id = ?
-        """,
-        (appointment_id,),
-    ).fetchone()
+    try:
+        # Fetch the appointment first so we can return its details
+        cur.execute(
+            """
+            SELECT
+                a.*,
+                d.name AS doctor_name,
+                d.department
+            FROM appointments a
+            JOIN doctors d ON d.id = a.doctor_id
+            WHERE a.id = %s
+            """,
+            (appointment_id,),
+        )
+        row = cur.fetchone()
 
-    if not row:
+        if not row:
+            return None
+
+        appointment = _row_to_dict(row)
+
+        # Delete the appointment
+        cur.execute("DELETE FROM appointments WHERE id = %s", (appointment_id,))
+        conn.commit()
+
+        return appointment
+
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
         conn.close()
-        return None
-
-    appointment = _row_to_dict(row)
-
-    # Delete the appointment
-    conn.execute("DELETE FROM appointments WHERE id = ?", (appointment_id,))
-    conn.commit()
-    conn.close()
-
-    return appointment
-

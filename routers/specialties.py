@@ -10,7 +10,7 @@ Endpoint:
 from fastapi import APIRouter
 
 from models import SpecialtyListResponse  # type: ignore # pyrefly: ignore [missing-import]
-from store import get_all_specialties  # type: ignore # pyrefly: ignore [missing-import]
+from db.store import get_all_specialties  # type: ignore # pyrefly: ignore [missing-import]
 
 router = APIRouter(prefix="/specialties", tags=["Specialties"])
 

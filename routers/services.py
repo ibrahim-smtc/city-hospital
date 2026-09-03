@@ -11,7 +11,7 @@ Endpoint:
 from fastapi import APIRouter
 
 from models import ServiceListResponse 
-from store import get_all_services 
+from db.store import get_all_services 
 
 router = APIRouter(prefix="/services", tags=["Services"])
 

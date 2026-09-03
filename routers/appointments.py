@@ -22,7 +22,7 @@ from models import (  # type: ignore # pyrefly: ignore [missing-import]
     AppointmentListResponse,
     AppointmentResponse,
 )
-from store import (  # type: ignore # pyrefly: ignore [missing-import]
+from db.store import (  # type: ignore # pyrefly: ignore [missing-import]
     create_appointment,
     delete_appointment,
     get_appointment_by_id,
