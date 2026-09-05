@@ -27,6 +27,7 @@ Functions:
 
 import json
 import os
+import secrets
 from datetime import datetime, timezone
 
 import psycopg2
@@ -453,6 +454,155 @@ def delete_appointment(appointment_id: str) -> dict | None:
 
         return appointment
 
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ===========================================================================
+#  DOCTOR PORTAL (ACCOUNTS, SESSIONS, APPOINTMENT CONFIRMATIONS)
+# ===========================================================================
+
+def get_doctor_account_by_email(email: str) -> dict | None:
+    """
+    Fetch a doctor_accounts row by email.
+    Returns dict with keys: doctor_id, email, password_hash, created_at, or None.
+    """
+    conn = _get_connection()
+    cur = _cursor(conn)
+    cur.execute(
+        """
+        SELECT doctor_id, email, password_hash, created_at
+        FROM doctor_accounts
+        WHERE email = %s
+        """,
+        (email.strip().lower(),),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        return None
+    return _row_to_dict(row)
+
+
+def create_doctor_session(doctor_id: int) -> str:
+    """
+    Generate an unguessable session token, insert into doctor_sessions, and return the token.
+    """
+    token = secrets.token_urlsafe(32)
+    conn = _get_connection()
+    cur = _cursor(conn)
+    try:
+        cur.execute(
+            """
+            INSERT INTO doctor_sessions (token, doctor_id)
+            VALUES (%s, %s)
+            """,
+            (token, doctor_id),
+        )
+        conn.commit()
+        return token
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+
+def get_doctor_id_from_token(token: str) -> int | None:
+    """
+    Look up doctor_sessions by token and return the doctor_id, or None if not found
+    or expired (session older than 12 hours).
+    """
+    conn = _get_connection()
+    cur = _cursor(conn)
+    cur.execute(
+        """
+        SELECT doctor_id
+        FROM doctor_sessions
+        WHERE token = %s
+          AND created_at > now() - INTERVAL '12 hours'
+        """,
+        (token,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row:
+        return None
+    return row["doctor_id"]
+
+
+def get_appointments_for_doctor(doctor_id: int) -> list[dict]:
+    """
+    Return all appointments for a specific doctor, matching the shape/fields
+    returned by list_appointments.
+    """
+    conn = _get_connection()
+    cur = _cursor(conn)
+    query = """
+        SELECT
+            a.*,
+            d.name AS doctor_name,
+            d.department
+        FROM appointments a
+        JOIN doctors d ON d.id = a.doctor_id
+        WHERE a.doctor_id = %s
+        ORDER BY a.created_at DESC
+    """
+    cur.execute(query, (doctor_id,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [_row_to_dict(r) for r in rows]
+
+
+def confirm_appointment_for_doctor(appointment_id: str, doctor_id: int) -> dict | None:
+    """
+    Update an appointment's status to 'confirmed', but ONLY if the appointment's
+    doctor_id matches the doctor_id passed in AND its current status is 'pending'.
+    Returns the updated appointment dict on success.
+    Returns None if the appointment doesn't exist, doesn't belong to that doctor,
+    or isn't in 'pending' status.
+    """
+    conn = _get_connection()
+    cur = _cursor(conn)
+    try:
+        cur.execute(
+            """
+            UPDATE appointments
+            SET status = 'confirmed'
+            WHERE id = %s AND doctor_id = %s AND status = 'pending'
+            RETURNING id
+            """,
+            (appointment_id, doctor_id),
+        )
+        updated = cur.fetchone()
+        if not updated:
+            conn.rollback()
+            return None
+        conn.commit()
+
+        # Fetch full appointment row with doctor details to match appointment shape
+        cur.execute(
+            """
+            SELECT
+                a.*,
+                d.name AS doctor_name,
+                d.department
+            FROM appointments a
+            JOIN doctors d ON d.id = a.doctor_id
+            WHERE a.id = %s
+            """,
+            (appointment_id,),
+        )
+        full_row = cur.fetchone()
+        return _row_to_dict(full_row) if full_row else None
     except Exception:
         conn.rollback()
         raise

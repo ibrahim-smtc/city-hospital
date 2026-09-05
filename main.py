@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 # pyrefly: ignore [missing-import]
 from fastapi_mcp import AuthConfig, FastApiMCP
 
-from routers import appointments, chat, doctors, services, specialties  # type: ignore # pyrefly: ignore [missing-import]
+from routers import appointments, chat, doctor_portal, doctors, services, specialties  # type: ignore # pyrefly: ignore [missing-import]
 
 # ---------------------------------------------------------------------------
 #  Create the FastAPI app
@@ -56,6 +56,7 @@ app.include_router(appointments.router)
 app.include_router(specialties.router)
 app.include_router(services.router)
 app.include_router(chat.router)
+app.include_router(doctor_portal.router)
 
 # ---------------------------------------------------------------------------
 #  Mount the static frontend (if it exists)
@@ -89,7 +90,7 @@ mcp = FastApiMCP(
         "Tools for looking up doctors and their availability, and for booking, "
         "checking, listing, and cancelling appointments."
     ),
-    exclude_tags=["Chat", "Specialties", "Services"],
+    exclude_tags=["Chat", "Specialties", "Services", "DoctorPortal"],
     auth_config=AuthConfig(dependencies=[Depends(_verify_mcp_token)]),
 )
 mcp.mount_http(mount_path="/mcp")

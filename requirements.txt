@@ -5,3 +5,4 @@ fastapi-mcp==0.4.0
 mcp==1.29.1
 psycopg2-binary==2.9.12
 python-dotenv==1.2.3
+bcrypt==4.3.0

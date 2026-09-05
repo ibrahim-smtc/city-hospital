@@ -108,3 +108,22 @@ CREATE TABLE appointments (
     reason        TEXT    DEFAULT '',
     created_at    TEXT    NOT NULL
 );
+
+-- --------------------------------------------------------- doctor_accounts --
+-- Stores login credentials for doctors. One account per doctor.
+-- password_hash stores a bcrypt hash — plaintext is never persisted.
+-- ON CONFLICT handling is done in the seed script (create_doctor_accounts.py).
+CREATE TABLE IF NOT EXISTS doctor_accounts (
+    doctor_id     INTEGER     PRIMARY KEY REFERENCES doctors(id),
+    email         TEXT        NOT NULL UNIQUE,
+    password_hash TEXT        NOT NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- --------------------------------------------------------- doctor_sessions --
+-- Stores active session tokens for logged-in doctors.
+CREATE TABLE IF NOT EXISTS doctor_sessions (
+    token       TEXT PRIMARY KEY,
+    doctor_id   INTEGER     NOT NULL REFERENCES doctors(id),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
