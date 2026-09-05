@@ -1,0 +1,578 @@
+/* ============================================================
+   Doctor Portal — styles.css
+   Design System: Bespoke Noir / Architectural Clinical
+   Matches the rest of New Care Med Center.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #080808;
+  --surface:     #101010;
+  --surface-2:   #171717;
+  --surface-3:   #1f1f1f;
+  --line:        #282828;
+  --line-2:      #333333;
+  --fg:          #f2f0ec;
+  --text-muted:  #8b8985;
+  --text-dim:    #6d6b66;
+  --accent:      #e8b04b;
+  --accent-dark: #c99333;
+  --danger:      #e2564f;
+  --success:     #8fb894;
+  --pending:     #e8b04b;
+  --radius:      4px;
+  --transition:  0.15s ease;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ─────────────────────────────────────────── */
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
+
+/* ── Split-Screen Login Layout ───────────────────────────── */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  width: 100%;
+  background: var(--bg);
+}
+
+.login-split-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Left Architectural Hero Panel */
+.login-hero-panel {
+  flex: 1.25;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 48px;
+  background: #080808 url('assets/hero.jpg') center center / cover no-repeat;
+  min-height: 100vh;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 8, 0.78) 0%,
+    rgba(8, 8, 8, 0.45) 45%,
+    rgba(8, 8, 8, 0.90) 100%
+  );
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-cross {
+  width: 28px;
+  height: 28px;
+  fill: var(--fg);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.brand-dept {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Right Form Panel */
+.login-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  min-height: 100vh;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: transparent;
+}
+
+.login-card-header {
+  margin-bottom: 32px;
+}
+
+.hospital-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hospital-mark svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--accent);
+}
+
+.mark-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-card h1 {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  line-height: 1.15;
+}
+
+/* ── Form Controls ───────────────────────────────────────── */
+.form-group {
+  margin-bottom: 22px;
+}
+
+label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  color: var(--fg);
+  font-size: 14px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  outline: none;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+input[type="password"] {
+  padding-right: 44px;
+}
+
+input:focus {
+  border-color: var(--fg);
+  background: var(--surface-2);
+}
+
+/* Maintain dark theme when browser autofill is triggered */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #101010 inset !important;
+  -webkit-text-fill-color: var(--fg) !important;
+  caret-color: var(--fg);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.btn-toggle-pw {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition);
+}
+
+.btn-toggle-pw:hover {
+  color: var(--fg);
+}
+
+.btn-toggle-pw svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.btn:active { transform: scale(0.99); }
+
+.btn-primary {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  width: 100%;
+  padding: 13px;
+  margin-top: 8px;
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #080808;
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(8, 8, 8, 0.25);
+  border-top-color: #080808;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.btn-primary.loading .btn-spinner { display: inline-block; }
+.btn-primary.loading .btn-text { opacity: 0.8; }
+
+.btn-confirm {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.btn-confirm:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #080808;
+}
+.btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-logout {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--line);
+}
+.btn-logout:hover {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+/* ── Error / Info messages ───────────────────────────────── */
+.error-msg {
+  margin-top: 16px;
+  background: #140d0d;
+  border: 1px solid #3d1c1c;
+  color: var(--danger);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.4;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+.inline-error {
+  margin-top: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--danger);
+  display: none;
+}
+.inline-error.visible { display: block; }
+
+/* ── Login Footer ────────────────────────────────────────── */
+.login-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.login-footer p {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.login-footer a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-footer a:hover {
+  color: var(--accent);
+}
+
+.security-tag {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── Responsive Behavior ─────────────────────────────────── */
+@media (max-width: 960px) {
+  .login-split-wrapper {
+    flex-direction: column;
+  }
+
+  .login-hero-panel {
+    flex: none;
+    min-height: auto;
+    padding: 32px 24px;
+  }
+
+  .hero-content {
+    gap: 20px;
+  }
+
+  .login-form-panel {
+    flex: 1;
+    min-height: auto;
+    padding: 36px 24px 48px;
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+
+  .login-card {
+    max-width: 100%;
+  }
+}
+
+/* ── Dashboard Screen ────────────────────────────────────── */
+#dashboard-screen { display: none; min-height: 100vh; flex-direction: column; }
+#dashboard-screen.visible { display: flex; }
+
+.dash-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0 32px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dash-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.dash-logo svg { width: 20px; height: 20px; fill: var(--fg); }
+
+.dash-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.doctor-badge {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.doctor-badge strong { color: var(--fg); }
+
+.dash-main {
+  flex: 1;
+  padding: 36px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.dash-main h2 {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.dash-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 28px;
+}
+
+/* ── Appointments Table ──────────────────────────────────── */
+.appt-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead th {
+  padding: 13px 16px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--line);
+  transition: background var(--transition);
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+
+td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: var(--fg);
+}
+
+.appt-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.status-badge.pending   { background: rgba(232, 176, 75, 0.12); color: var(--pending); border: 1px solid rgba(232, 176, 75, 0.3); }
+.status-badge.confirmed { background: rgba(143, 184, 148, 0.12); color: var(--success); border: 1px solid rgba(143, 184, 148, 0.3); }
+
+/* ── Loading / Empty ─────────────────────────────────────── */
+.loading-row, .empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 48px 16px;
+  font-size: 13px;
+}
+
+/* ── Spinner ─────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(242, 240, 236, 0.2);
+  border-top-color: var(--fg);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .login-card { padding: 24px 0; }
+  .dash-header { padding: 0 16px; }
+  .dash-main   { padding: 24px 16px; }
+}

@@ -62,6 +62,7 @@ app.include_router(doctor_portal.router)
 #  Mount the static frontend (if it exists)
 # ---------------------------------------------------------------------------
 app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/doctor", StaticFiles(directory="doctor_portal_frontend", html=True), name="doctor_portal_frontend")
 
 # ---------------------------------------------------------------------------
 #  MCP server — exposes the API above as tools for MCP clients (e.g. Perfox)

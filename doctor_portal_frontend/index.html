@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Portal — City Hospital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LOGIN SCREEN — Clean Architectural Split Screen
+  ══════════════════════════════════════════════════════════ -->
+  <div id="login-screen" class="login-split-wrapper">
+    <!-- Left Architectural Hero Panel -->
+    <aside class="login-hero-panel" aria-label="Hospital Campus">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-brand">
+          <svg class="brand-cross" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill-rule="evenodd" d="M0 0h24v24H0V0zM10 5h4v5h5v4h-5v5h-4v-5H5v-4h5V5z"/>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-title">New Care Med Center</span>
+            <span class="brand-dept">Physician & Staff Portal</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Login Card Panel -->
+    <main class="login-form-panel">
+      <div class="login-card">
+        <div class="login-card-header">
+          <div class="hospital-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill-rule="evenodd" d="M0 0h24v24H0V0zM10 5h4v5h5v4h-5v5h-4v-5H5v-4h5V5z"/>
+            </svg>
+            <span class="mark-label">STAFF ACCESS</span>
+          </div>
+          <h1>Doctor Sign In</h1>
+        </div>
+
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="username"
+              placeholder="doctor@drcityhospital.com"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="password">Password</label>
+            </div>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••••••"
+                required
+              >
+              <button type="button" class="btn-toggle-pw" id="toggle-pw-btn" aria-label="Show password" title="Show password">
+                <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="login-btn">
+            <span class="btn-text">Sign In to Portal</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+
+          <div class="error-msg" id="login-error" role="alert" aria-live="polite"></div>
+        </form>
+
+        <div class="login-footer">
+          <p>IT Support: <a href="mailto:support@drcityhospital.com">support@drcityhospital.com</a></p>
+          <span class="security-tag">Internal Clinical System &bull; Confidential</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       DASHBOARD SCREEN
+  ══════════════════════════════════════════════════════════ -->
+  <div id="dashboard-screen">
+
+    <header class="dash-header">
+      <div class="dash-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill-rule="evenodd" d="M0 0h24v24H0V0zM10 5h4v5h5v4h-5v5h-4v-5H5v-4h5V5z"/>
+        </svg>
+        Doctor Portal
+      </div>
+      <div class="dash-right">
+        <span class="doctor-badge">Signed in as <strong id="doctor-name-display"></strong></span>
+        <button class="btn btn-logout" id="logout-btn" type="button">Log Out</button>
+      </div>
+    </header>
+
+    <main class="dash-main">
+      <h2>Your Appointments</h2>
+      <p class="dash-subtitle" id="dash-subtitle">Loading appointments…</p>
+
+      <div class="appt-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Appointment ID</th>
+              <th>Patient</th>
+              <th>Phone</th>
+              <th>Date</th>
+              <th>Slot</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="appointments-tbody">
+            <tr>
+              <td colspan="8" class="loading-row">
+                <span class="spinner"></span>&nbsp; Loading…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
