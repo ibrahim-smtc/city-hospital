@@ -57,7 +57,7 @@
 
   /* --- Overlay + native control tinting --- */
   --overlay:    rgba(0, 0, 0, 0.82);
-  --date-icon-filter: invert(1) brightness(0.8);
+  --date-icon-filter: none;
 
   /* --- Legacy aliases (keep any inline var() references resolving) --- */
   --primary:      var(--fg);
@@ -690,10 +690,22 @@ main { max-width: 1200px; margin: 96px auto; padding: 0 40px; min-height: 50vh; 
 .form-control:focus { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
 textarea.form-control { min-height: 96px; resize: vertical; }
 
-/* Keep the native date picker legible on a dark field */
+/* Keep the native date picker legible on both dark and light fields */
+input[type="date"].form-control {
+  color-scheme: dark;
+}
+:root[data-theme="light"] input[type="date"].form-control {
+  color-scheme: light;
+}
+
 input[type="date"].form-control::-webkit-calendar-picker-indicator {
   filter: var(--date-icon-filter);
   cursor: pointer;
+  opacity: 0.9;
+  transition: opacity .15s ease;
+}
+input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .field-hint {
