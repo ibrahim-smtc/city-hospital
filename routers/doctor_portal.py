@@ -4,9 +4,10 @@ routers/doctor_portal.py
 Endpoints for doctor authentication and management of their appointments.
 
 Endpoints:
-  POST /doctor-login                               — authenticate doctor, return session token
-  GET  /doctor/appointments                       — view logged-in doctor's appointments
-  POST /doctor/appointments/{appointment_id}/confirm — confirm a pending appointment belonging to this doctor
+  POST /doctor-login                                       — authenticate doctor, return session token
+  GET  /doctor/appointments                               — view logged-in doctor's appointments
+  POST /doctor/appointments/{appointment_id}/confirm      — confirm a pending appointment belonging to this doctor
+  POST /doctor/appointments/{appointment_id}/complete     — complete a confirmed consultation (fires Perfox webhook notification)
 """
 
 import bcrypt
@@ -24,6 +25,7 @@ from db.store import (
     get_doctor_id_from_token,
 )
 from models import ConsultationCompleteRequest
+from notification_service import notify_consultation_complete
 
 router = APIRouter(tags=["DoctorPortal"])
 
@@ -159,7 +161,7 @@ def confirm_doctor_appointment(
 @router.post(
     "/doctor/appointments/{appointment_id}/complete",
     summary="Complete consultation",
-    description="Complete a consultation for a confirmed appointment assigned to the currently authenticated doctor.",
+    description="Complete a consultation for a confirmed appointment assigned to the currently authenticated doctor. Fires a Perfox webhook notification when patient_email is provided.",
 )
 def complete_doctor_consultation(
     appointment_id: str,
@@ -169,6 +171,10 @@ def complete_doctor_consultation(
     """
     Complete an appointment consultation if it belongs to the authenticated doctor
     and is currently in 'confirmed' status.
+
+    If payload.patient_email is non-blank, fires a Perfox webhook notification
+    synchronously. Webhook failures are captured in email_sent/email_error and
+    never cause this endpoint to fail.
     """
     updated = complete_consultation(
         appointment_id=appointment_id,
@@ -186,9 +192,33 @@ def complete_doctor_consultation(
             detail="Appointment not found, does not belong to you, or is not in confirmed status",
         )
 
-    return {
+    # Build response base
+    response: dict = {
         "success": True,
         "message": "Consultation completed successfully",
         "data": updated,
     }
 
+    # Fire notification only when patient_email is non-blank
+    if payload.patient_email:
+        # doctor_name and patient_name come from the dict returned by complete_consultation
+        doctor_name = updated.get("doctor_name") or ""
+        patient_name = updated.get("patient_name") or ""
+
+        email_ok, email_err = notify_consultation_complete(
+            patient_email=payload.patient_email,
+            patient_name=patient_name,
+            doctor_name=doctor_name,
+            labs_ordered=payload.labs_ordered,
+            imaging_ordered=payload.imaging_ordered,
+            meds_prescribed=payload.meds_prescribed,
+            billing_pending=payload.billing_pending,
+            followup_needed=payload.followup_needed,
+        )
+        response["email_sent"] = email_ok
+        if not email_ok:
+            response["email_error"] = email_err
+    else:
+        response["email_sent"] = False
+
+    return response
