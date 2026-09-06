@@ -31,6 +31,23 @@ const logoutBtn         = document.getElementById('logout-btn');
 const togglePwBtn       = document.getElementById('toggle-pw-btn');
 const pwInput           = document.getElementById('password');
 
+const completeModal     = document.getElementById('complete-modal');
+const modalMeta         = document.getElementById('modal-meta');
+const modalCloseBtn     = document.getElementById('modal-close-btn');
+const modalCancelBtn    = document.getElementById('modal-cancel-btn');
+const completeForm      = document.getElementById('complete-form');
+const modalPatientEmail = document.getElementById('modal-patient-email');
+const modalEmailError   = document.getElementById('modal-email-error');
+const modalFormError    = document.getElementById('modal-form-error');
+const modalSubmitBtn    = document.getElementById('modal-submit-btn');
+const checkLabs         = document.getElementById('check-labs');
+const checkImaging      = document.getElementById('check-imaging');
+const checkMeds         = document.getElementById('check-meds');
+const checkBilling      = document.getElementById('check-billing');
+const checkFollowup     = document.getElementById('check-followup');
+
+let currentCompleteApptId = null;
+
 // ── Helpers ────────────────────────────────────────────────
 function getToken()  { return localStorage.getItem(TOKEN_KEY); }
 
@@ -70,8 +87,34 @@ function showDashboard() {
 }
 
 function statusBadge(status) {
-  const cls = status === 'confirmed' ? 'confirmed' : 'pending';
+  let cls = 'pending';
+  if (status === 'confirmed') cls = 'confirmed';
+  else if (status === 'completed') cls = 'completed';
   return `<span class="status-badge ${cls}">${status}</span>`;
+}
+
+function getChecklistSummary(appt) {
+  const parts = [];
+  if (appt.labs_ordered) parts.push('Labs');
+  if (appt.imaging_ordered) parts.push('Imaging');
+  if (appt.meds_prescribed) parts.push('Meds prescribed');
+  if (appt.billing_pending) parts.push('Billing pending');
+  if (appt.followup_needed) parts.push('Follow-up needed');
+  return parts.join(', ');
+}
+
+function renderStatusCell(appt) {
+  const badge = statusBadge(appt.status);
+  if (appt.status === 'completed') {
+    const summary = getChecklistSummary(appt);
+    return `
+      <div class="status-cell-wrap">
+        ${badge}
+        ${summary ? `<span class="checklist-summary-text">${esc(summary)}</span>` : ''}
+      </div>
+    `;
+  }
+  return badge;
 }
 
 // Escape user-supplied text to avoid XSS (appointments come from the DB but
@@ -86,16 +129,31 @@ function esc(str) {
 
 // ── Render one table row ────────────────────────────────────
 function buildRow(appt) {
-  const isPending = appt.status === 'pending';
-  const actionCell = isPending
-    ? `<button
-         class="btn btn-confirm"
-         id="confirm-btn-${esc(appt.id)}"
-         data-appt-id="${esc(appt.id)}"
-         type="button"
-       >Confirm</button>
-       <div class="inline-error" id="err-${esc(appt.id)}"></div>`
-    : `—`;
+  const isPending   = appt.status === 'pending';
+  const isConfirmed = appt.status === 'confirmed';
+
+  let actionCell = '—';
+  if (isPending) {
+    actionCell = `
+      <button
+        class="btn btn-confirm"
+        id="confirm-btn-${esc(appt.id)}"
+        data-appt-id="${esc(appt.id)}"
+        type="button"
+      >Confirm</button>
+      <div class="inline-error" id="err-${esc(appt.id)}"></div>`;
+  } else if (isConfirmed) {
+    actionCell = `
+      <button
+        class="btn btn-complete-trigger"
+        id="complete-btn-${esc(appt.id)}"
+        data-appt-id="${esc(appt.id)}"
+        data-patient-name="${esc(appt.patient_name)}"
+        data-patient-email="${esc(appt.patient_email || '')}"
+        type="button"
+      >Mark Consultation Complete</button>
+      <div class="inline-error" id="err-comp-${esc(appt.id)}"></div>`;
+  }
 
   return `
     <tr id="row-${esc(appt.id)}">
@@ -105,7 +163,7 @@ function buildRow(appt) {
       <td>${esc(appt.date)}</td>
       <td>${esc(appt.slot)}</td>
       <td>${esc(appt.reason) || '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td id="status-${esc(appt.id)}">${statusBadge(appt.status)}</td>
+      <td id="status-${esc(appt.id)}">${renderStatusCell(appt)}</td>
       <td id="action-${esc(appt.id)}">${actionCell}</td>
     </tr>`;
 }
@@ -145,6 +203,7 @@ async function loadAppointments() {
     appointmentsTbody.innerHTML = list.map(buildRow).join('');
     dashSubtitle.textContent = `${list.length} appointment${list.length === 1 ? '' : 's'}`;
     attachConfirmListeners();
+    attachCompleteListeners();
   }
 }
 
@@ -182,9 +241,17 @@ async function handleConfirm(apptId) {
   }
 
   if (res.ok) {
-    // Update that row in place — no full page reload
-    statusEl.innerHTML = statusBadge('confirmed');
-    actionEl.innerHTML = '—';
+    // Update that row in place — status confirmed, action becomes Mark Consultation Complete
+    statusEl.innerHTML = renderStatusCell({ status: 'confirmed' });
+    actionEl.innerHTML = `
+      <button
+        class="btn btn-complete-trigger"
+        id="complete-btn-${esc(apptId)}"
+        data-appt-id="${esc(apptId)}"
+        type="button"
+      >Mark Consultation Complete</button>
+      <div class="inline-error" id="err-comp-${esc(apptId)}"></div>`;
+    attachCompleteListeners();
   } else {
     const detail = await res.json().catch(() => ({}));
     btn.disabled = false;
@@ -192,6 +259,203 @@ async function handleConfirm(apptId) {
     errEl.textContent = detail.detail ?? 'Could not confirm. Please try again.';
     errEl.classList.add('visible');
   }
+}
+
+// ── Wire up complete consultation buttons & modal ──────────
+function attachCompleteListeners() {
+  appointmentsTbody.querySelectorAll('.btn-complete-trigger').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openCompleteModal(btn.dataset.apptId, btn.dataset.patientName, btn.dataset.patientEmail);
+    });
+  });
+}
+
+function openCompleteModal(apptId, patientName, patientEmail) {
+  currentCompleteApptId = apptId;
+  if (modalMeta) {
+    modalMeta.textContent = `${apptId} • Patient: ${patientName || 'Patient'}`;
+  }
+
+  // Reset form state
+  if (modalPatientEmail) {
+    modalPatientEmail.value = patientEmail || '';
+    modalPatientEmail.classList.remove('error');
+  }
+  if (modalEmailError) {
+    modalEmailError.textContent = '';
+    modalEmailError.classList.remove('visible');
+  }
+  if (modalFormError) {
+    modalFormError.textContent = '';
+    modalFormError.classList.remove('visible');
+  }
+
+  if (checkLabs)     checkLabs.checked = false;
+  if (checkImaging)  checkImaging.checked = false;
+  if (checkMeds)     checkMeds.checked = false;
+  if (checkBilling)  checkBilling.checked = false;
+  if (checkFollowup) checkFollowup.checked = false;
+
+  if (completeModal) {
+    completeModal.style.setProperty('display', 'flex', 'important');
+    completeModal.classList.add('visible');
+    completeModal.setAttribute('aria-hidden', 'false');
+  }
+  setTimeout(() => {
+    if (modalPatientEmail) modalPatientEmail.focus();
+  }, 50);
+}
+
+function closeCompleteModal() {
+  if (completeModal) {
+    completeModal.style.setProperty('display', 'none', 'important');
+    completeModal.classList.remove('visible');
+    completeModal.setAttribute('aria-hidden', 'true');
+  }
+  currentCompleteApptId = null;
+}
+
+if (modalCloseBtn)  modalCloseBtn.addEventListener('click', closeCompleteModal);
+if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeCompleteModal);
+
+if (completeModal) {
+  completeModal.addEventListener('click', (e) => {
+    if (e.target === completeModal) closeCompleteModal();
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && completeModal && completeModal.classList.contains('visible')) {
+    closeCompleteModal();
+  }
+});
+
+if (modalPatientEmail) {
+  modalPatientEmail.addEventListener('input', () => {
+    if (modalPatientEmail.classList.contains('error')) {
+      modalPatientEmail.classList.remove('error');
+      modalEmailError.textContent = '';
+      modalEmailError.classList.remove('visible');
+    }
+  });
+}
+
+if (completeForm) {
+  completeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const emailVal = (modalPatientEmail ? modalPatientEmail.value : '').trim();
+    if (modalPatientEmail) modalPatientEmail.classList.remove('error');
+    if (modalEmailError) {
+      modalEmailError.textContent = '';
+      modalEmailError.classList.remove('visible');
+    }
+    if (modalFormError) {
+      modalFormError.textContent = '';
+      modalFormError.classList.remove('visible');
+    }
+
+    // Optional check: only validate email format if doctor entered something
+    if (emailVal) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVal)) {
+        if (modalEmailError) {
+          modalEmailError.textContent = 'Please enter a valid email address';
+          modalEmailError.classList.add('visible');
+        }
+        if (modalPatientEmail) {
+          modalPatientEmail.classList.add('error');
+          modalPatientEmail.focus();
+        }
+        return;
+      }
+    }
+
+    const token = getToken();
+    if (!token) {
+      closeCompleteModal();
+      showLogin();
+      return;
+    }
+
+    const payload = {
+      patient_email:   emailVal ? emailVal : null,
+      labs_ordered:    checkLabs ? checkLabs.checked : false,
+      imaging_ordered: checkImaging ? checkImaging.checked : false,
+      meds_prescribed: checkMeds ? checkMeds.checked : false,
+      billing_pending: checkBilling ? checkBilling.checked : false,
+      followup_needed: checkFollowup ? checkFollowup.checked : false,
+    };
+
+    if (modalSubmitBtn) {
+      modalSubmitBtn.disabled = true;
+      modalSubmitBtn.classList.add('loading');
+      const btnText = modalSubmitBtn.querySelector('.btn-text');
+      if (btnText) btnText.textContent = 'Saving…';
+    }
+
+    function resetModalSubmitBtn() {
+      if (modalSubmitBtn) {
+        modalSubmitBtn.disabled = false;
+        modalSubmitBtn.classList.remove('loading');
+        const btnText = modalSubmitBtn.querySelector('.btn-text');
+        if (btnText) btnText.textContent = 'Complete Consultation';
+      }
+    }
+
+    const apptId = currentCompleteApptId;
+    let res;
+    try {
+      res = await fetch(`/doctor/appointments/${encodeURIComponent(apptId)}/complete`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      resetModalSubmitBtn();
+      if (modalFormError) {
+        modalFormError.textContent = 'Network error. Please try again.';
+        modalFormError.classList.add('visible');
+      }
+      return;
+    }
+
+    resetModalSubmitBtn();
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      if (modalFormError) {
+        modalFormError.textContent = errJson.detail ?? 'Could not complete consultation. Please try again.';
+        modalFormError.classList.add('visible');
+      }
+      return;
+    }
+
+    const resJson = await res.json().catch(() => ({}));
+    const updatedData = resJson.data ?? payload;
+
+    closeCompleteModal();
+
+    // Update row in-place without page reload
+    const statusEl = document.getElementById(`status-${apptId}`);
+    const actionEl = document.getElementById(`action-${apptId}`);
+
+    if (statusEl) {
+      const summary = getChecklistSummary(updatedData);
+      statusEl.innerHTML = `
+        <div class="status-cell-wrap">
+          ${statusBadge('completed')}
+          ${summary ? `<span class="checklist-summary-text">${esc(summary)}</span>` : ''}
+        </div>
+      `;
+    }
+    if (actionEl) {
+      actionEl.innerHTML = '—';
+    }
+  });
 }
 
 // ── Password visibility toggle ──────────────────────────────

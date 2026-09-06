@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.6">
 </head>
 <body>
 
@@ -147,8 +147,82 @@
       </div>
     </main>
 
+    <!-- ═══════════════════════════════════════════════════════
+         CONSULTATION COMPLETE MODAL
+    ══════════════════════════════════════════════════════════ -->
+    <div id="complete-modal" class="modal-backdrop" style="display: none !important;" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-header">
+          <div>
+            <div class="modal-eyebrow">CLINICAL OUTCOMES</div>
+            <h3 id="modal-title" class="modal-title">Mark Consultation Complete</h3>
+            <p class="modal-meta" id="modal-meta"></p>
+          </div>
+          <button type="button" class="btn-modal-close" id="modal-close-btn" aria-label="Close modal">&times;</button>
+        </div>
+
+        <form id="complete-form" novalidate>
+          <div class="form-group">
+            <label for="modal-patient-email">Patient Email <span class="opt-label">(Optional)</span></label>
+            <input
+              type="email"
+              id="modal-patient-email"
+              placeholder="patient@example.com"
+              autocomplete="off"
+            >
+            <div class="field-error" id="modal-email-error"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="section-label">Consultation Checklist</label>
+            <div class="checklist-grid">
+              <label class="check-item">
+                <input type="checkbox" id="check-labs" name="labs_ordered">
+                <span class="check-box"></span>
+                <span class="check-label-text">Labs ordered</span>
+              </label>
+
+              <label class="check-item">
+                <input type="checkbox" id="check-imaging" name="imaging_ordered">
+                <span class="check-box"></span>
+                <span class="check-label-text">Imaging ordered</span>
+              </label>
+
+              <label class="check-item">
+                <input type="checkbox" id="check-meds" name="meds_prescribed">
+                <span class="check-box"></span>
+                <span class="check-label-text">Medicines prescribed</span>
+              </label>
+
+              <label class="check-item">
+                <input type="checkbox" id="check-billing" name="billing_pending">
+                <span class="check-box"></span>
+                <span class="check-label-text">Billing pending</span>
+              </label>
+
+              <label class="check-item">
+                <input type="checkbox" id="check-followup" name="followup_needed">
+                <span class="check-box"></span>
+                <span class="check-label-text">Follow-up needed</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-form-error" id="modal-form-error" role="alert" aria-live="polite"></div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-modal-cancel" id="modal-cancel-btn">Cancel</button>
+            <button type="submit" class="btn btn-modal-submit" id="modal-submit-btn">
+              <span class="btn-text">Complete Consultation</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.6"></script>
 </body>
 </html>
