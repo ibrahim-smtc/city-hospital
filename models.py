@@ -221,3 +221,58 @@ class ChatResponse(BaseModel):
     )
     session_id: Optional[str] = None
 
+
+# ===========================================================================
+#  DOCTOR PORTAL MODELS
+# ===========================================================================
+
+class ConsultationCompleteRequest(BaseModel):
+    """
+    Request body for POST /doctor/appointments/{appointment_id}/complete.
+    Captures post-consultation outcomes, checklist flags, and patient contact.
+    """
+    patient_email: Optional[str] = Field(
+        None,
+        description="Patient's email address for consultation summary",
+        examples=["test@example.com"],
+    )
+    labs_ordered: bool = Field(
+        False,
+        description="Whether laboratory tests were ordered",
+        examples=[True],
+    )
+    imaging_ordered: bool = Field(
+        False,
+        description="Whether radiology / imaging was ordered",
+        examples=[False],
+    )
+    meds_prescribed: bool = Field(
+        False,
+        description="Whether medications were prescribed",
+        examples=[True],
+    )
+    billing_pending: bool = Field(
+        False,
+        description="Whether billing or insurance processing is pending",
+        examples=[False],
+    )
+    followup_needed: bool = Field(
+        False,
+        description="Whether follow-up consultation is required",
+        examples=[True],
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "patient_email": "test@example.com",
+                "labs_ordered": True,
+                "imaging_ordered": False,
+                "meds_prescribed": True,
+                "billing_pending": False,
+                "followup_needed": True,
+            }
+        }
+    }
+
+

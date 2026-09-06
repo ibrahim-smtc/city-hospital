@@ -127,3 +127,15 @@ CREATE TABLE IF NOT EXISTS doctor_sessions (
     doctor_id   INTEGER     NOT NULL REFERENCES doctors(id),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ------------------------------------------------- consultation completion --
+-- Adds columns to appointments to track post-consultation details and checklist items.
+-- Existing rows default to NULL for timestamps/email and FALSE for checklist flags.
+ALTER TABLE appointments
+    ADD COLUMN IF NOT EXISTS consultation_completed_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS labs_ordered             BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS imaging_ordered          BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS meds_prescribed          BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS billing_pending          BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS followup_needed          BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS patient_email            TEXT;

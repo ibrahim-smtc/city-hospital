@@ -609,3 +609,96 @@ def confirm_appointment_for_doctor(appointment_id: str, doctor_id: int) -> dict 
     finally:
         cur.close()
         conn.close()
+
+
+def complete_consultation(
+    appointment_id: int | str,
+    doctor_id: int,
+    patient_email: str | None = None,
+    labs_ordered: bool = False,
+    imaging_ordered: bool = False,
+    meds_prescribed: bool = False,
+    billing_pending: bool = False,
+    followup_needed: bool = False,
+) -> dict | None:
+    """
+    Update an appointment's status to 'completed' and record consultation outcomes,
+    but ONLY if the appointment belongs to that doctor_id AND its current status
+    is exactly 'confirmed'.
+
+    On success, sets status to 'completed', sets consultation_completed_at to now(),
+    records the checklist booleans and patient_email, and returns the updated row.
+
+    On failure (wrong doctor, appointment not found, or not in 'confirmed' state),
+    returns None following the same indistinguishable-failure principle.
+    """
+    conn = _get_connection()
+    cur = _cursor(conn)
+    appt_id_str = str(appointment_id)
+    appt_id_candidate = f"APPT-{appt_id_str}" if not appt_id_str.startswith("APPT-") else appt_id_str
+
+    try:
+        cur.execute(
+            """
+            UPDATE appointments
+            SET
+                status = 'completed',
+                consultation_completed_at = now(),
+                labs_ordered = %s,
+                imaging_ordered = %s,
+                meds_prescribed = %s,
+                billing_pending = %s,
+                followup_needed = %s,
+                patient_email = %s
+            WHERE (id = %s OR id = %s)
+              AND doctor_id = %s
+              AND status = 'confirmed'
+            RETURNING id
+            """,
+            (
+                bool(labs_ordered),
+                bool(imaging_ordered),
+                bool(meds_prescribed),
+                bool(billing_pending),
+                bool(followup_needed),
+                patient_email,
+                appt_id_str,
+                appt_id_candidate,
+                doctor_id,
+            ),
+        )
+        updated = cur.fetchone()
+        if not updated:
+            conn.rollback()
+            return None
+        conn.commit()
+
+        matched_id = updated["id"]
+
+        # Fetch full appointment row with doctor details to match appointment shape
+        cur.execute(
+            """
+            SELECT
+                a.*,
+                d.name AS doctor_name,
+                d.department
+            FROM appointments a
+            JOIN doctors d ON d.id = a.doctor_id
+            WHERE a.id = %s
+            """,
+            (matched_id,),
+        )
+        full_row = cur.fetchone()
+        if not full_row:
+            return None
+        result = _row_to_dict(full_row)
+        if isinstance(result.get("consultation_completed_at"), datetime):
+            result["consultation_completed_at"] = result["consultation_completed_at"].isoformat()
+        return result
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+

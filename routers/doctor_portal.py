@@ -15,6 +15,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from db.store import (
+    complete_consultation,
     confirm_appointment_for_doctor,
     create_doctor_session,
     get_appointments_for_doctor,
@@ -22,6 +23,7 @@ from db.store import (
     get_doctor_by_id,
     get_doctor_id_from_token,
 )
+from models import ConsultationCompleteRequest
 
 router = APIRouter(tags=["DoctorPortal"])
 
@@ -152,3 +154,41 @@ def confirm_doctor_appointment(
         "message": "Appointment confirmed successfully",
         "data": updated,
     }
+
+
+@router.post(
+    "/doctor/appointments/{appointment_id}/complete",
+    summary="Complete consultation",
+    description="Complete a consultation for a confirmed appointment assigned to the currently authenticated doctor.",
+)
+def complete_doctor_consultation(
+    appointment_id: str,
+    payload: ConsultationCompleteRequest,
+    doctor_id: int = Depends(get_current_doctor_id),
+):
+    """
+    Complete an appointment consultation if it belongs to the authenticated doctor
+    and is currently in 'confirmed' status.
+    """
+    updated = complete_consultation(
+        appointment_id=appointment_id,
+        doctor_id=doctor_id,
+        patient_email=payload.patient_email,
+        labs_ordered=payload.labs_ordered,
+        imaging_ordered=payload.imaging_ordered,
+        meds_prescribed=payload.meds_prescribed,
+        billing_pending=payload.billing_pending,
+        followup_needed=payload.followup_needed,
+    )
+    if not updated:
+        raise HTTPException(
+            status_code=404,
+            detail="Appointment not found, does not belong to you, or is not in confirmed status",
+        )
+
+    return {
+        "success": True,
+        "message": "Consultation completed successfully",
+        "data": updated,
+    }
+
